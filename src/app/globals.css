@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%; /* #f8fafc slate-50 */
+    --foreground: 222 47% 11%; /* #0f172a slate-900 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 53%; /* #2563eb blue-600 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%; /* #f1f5f9 slate-100 */
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%; /* #64748b slate-500 */
+
+    --accent: 210 40% 92%; /* #e2e8f0 slate-200 */
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%; /* #ef4444 red-500 */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%; /* #e2e8f0 slate-200 */
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 0.25rem; /* 4px for compact, sharp enterprise feel */
+
+    --sidebar-background: 222 47% 11%; /* #0f172a dark navy sidebar */
+    --sidebar-foreground: 210 40% 96.1%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 221 83% 53%;
+  }
+
+  .dark {
+    --background: 222 47% 7%; /* #090d16 */
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%; /* #0f172a */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 20%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground text-xs md:text-sm antialiased font-sans;
+  }
+}
+
+/* Custom scrollbar for high density enterprise apps */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* High Density Table & Grid Utilities */
+.dense-table th {
+  @apply h-8 px-2 text-2xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200 select-none;
+}
+
+.dense-table td {
+  @apply h-8 px-2 text-xs border-b border-slate-100 font-mono text-slate-800;
+}
+
+.dense-row-hover {
+  @apply transition-colors hover:bg-blue-50/50 cursor-pointer;
+}
+
+/* MapLibre GL Custom Light Enterprise Styling */
+.promundo-map-popup,
+.promundo-map-popup.maplibregl-popup {
+  max-width: 360px !important;
+  z-index: 50;
+}
+
+.promundo-map-popup .maplibregl-popup-content {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important; /* slate-200 */
+  border-radius: 6px !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05) !important;
+  padding: 0 !important;
+  color: #0f172a !important;
+  overflow: hidden;
+}
+
+/* Control del Tip (Flecha indicadora) en todas las orientaciones */
+.promundo-map-popup .maplibregl-popup-tip,
+.promundo-map-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip {
+  border-bottom-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip {
+  border-top-color: #ffffff !important;
+}
+.promundo-map-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: #ffffff !important;
+}
+
+/* Botón de cierre MapLibre refinado sin solapamiento con slot exclusivo */
+.promundo-map-popup .maplibregl-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  color: #64748b !important; /* slate-500 */
+  font-size: 15px !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  outline: none !important;
+  cursor: pointer !important;
+  z-index: 20 !important;
+  transition: all 0.15s ease !important;
+}
+
+.promundo-map-popup .maplibregl-popup-close-button:hover {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #0f172a !important; /* slate-900 */
+}
+
