@@ -47,12 +47,59 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 2. Validar JWT de sesión con Supabase Auth
+  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+
+  // 2. Verificar si existe sesión directa/simulada en desarrollo
+  const simulatedCookie = request.cookies.get("promundo_simulated_user")?.value?.toLowerCase().trim();
+  if (simulatedCookie) {
+    const isSuperAdmin = simulatedCookie === SUPER_ADMIN_EMAIL.toLowerCase();
+    if (isSuperAdmin) {
+      if (pathname === "/login" || pathname === "/espera") {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+      return response;
+    }
+
+    // Consultar estado de usuario en base de datos
+    const { data: dbUser } = await supabase
+      .from("usuarios")
+      .select("estado_acceso, rol, activo")
+      .eq("email", simulatedCookie)
+      .maybeSingle();
+
+    const estadoAcceso = dbUser?.estado_acceso ?? "pendiente";
+    const rol = dbUser?.rol ?? "broker_junior";
+    const activo = dbUser?.activo ?? false;
+
+    if (estadoAcceso === "pendiente" || !activo) {
+      if (pathname.startsWith("/espera") || pathname.startsWith("/auth")) {
+        return response;
+      }
+      return NextResponse.redirect(new URL("/espera", request.url));
+    }
+
+    if (estadoAcceso === "denegado") {
+      if (pathname.startsWith("/espera") || pathname.startsWith("/auth")) {
+        return response;
+      }
+      return NextResponse.redirect(new URL("/espera?denegado=1", request.url));
+    }
+
+    if (pathname === "/login" || pathname === "/espera") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    if (pathname.startsWith("/accesos") && rol !== "admin") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    return response;
+  }
+
+  // 3. Validar JWT de sesión con Supabase Auth
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
   // A. Si no hay usuario autenticado en la sesión
   if (!user) {
@@ -66,9 +113,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // B. Hay usuario autenticado
+  // B. Hay usuario autenticado con Supabase Auth
   const email = user.email?.toLowerCase().trim() || "";
-  const isSuperAdmin = email === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = email === SUPER_ADMIN_EMAIL.toLowerCase();
 
   // Si es el Superadministrador Principal: pase irrestricto
   if (isSuperAdmin) {
