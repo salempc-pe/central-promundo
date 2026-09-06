@@ -2,9 +2,10 @@
 
 Este archivo almacena el historial acumulativo e inmutable de **todas las acciones técnicas, operativas y arquitectónicas** tomadas en el proyecto "Promundo Sistema", categorizadas cronológicamente por fecha.
 
-## 📅 2026-09-06 (Conexión Integral Supabase Cloud, PostGIS, DDL y Preparación Vercel)
+## 📅 2026-09-06 (Conexión Integral Supabase Cloud, PostGIS, DDL y Publicación en GitHub)
 
 ### 🗄️ Infraestructura Cloud & Persistencia de Base de Datos
+* **[ACC-066] [2026-09-06 01:18] Vinculación de Remoto GitHub y Push Inicial Exitoso de Rama Main:** Configuración de origen remoto `https://github.com/salempc-pe/central-promundo.git` y sincronización upstream `git push -u origin main` completada con éxito. Código fuente, esquemas Drizzle, configuración Next.js 14 y suites de validación 100% disponibles en GitHub con exclusión estricta de variables de entorno y credenciales sensibles (`.env.local`).
 * **[ACC-065] [2026-09-06 01:16] Conexión Integral de Supabase PostgreSQL + PostGIS, Ejecución de Migración DDL y Validación de Build de Producción:** Configuración de `.env.local` con credenciales de Supabase (`rioosacxbuwkxntxmmpe`). Ejecución exitosa de migración DDL (`scripts/apply-migration.mjs` y `0000_init_postgis_schema.sql`) habilitando extensiones `postgis` y `uuid-ossp`, 8 tablas (`terrenos`, `documentos_terreno`, `propietarios`, `clientes`, `negociaciones`, `bitacora_negociacion`, `comisiones_cierres`, `usuarios`), triggers para cálculo de punto espacial WGS84 e índices GiST y B-Tree. Inicialización de Git con rama `main`, blindaje de credenciales en `.gitignore`, verificación de `npm run build` (13/13 rutas estáticas compiladas exitosamente con 0 errores) y commit inicial para despliegue en Vercel.
 
 ## 📅 2026-09-05 (Optimización de Arrastre a 60fps en MapLibre, Recalibración Geoespacial y Rediseño de Popup HUD)
