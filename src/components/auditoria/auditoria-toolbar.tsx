@@ -40,13 +40,13 @@ export function AuditoriaToolbar({
   totalEventosFiltrados,
 }: AuditoriaToolbarProps) {
   const modulosDisponibles: { id: ModuloSistema; label: string }[] = [
-    { id: "terrenos", label: "Terrenos (Mod A)" },
-    { id: "documentos", label: "Documentos & CPU (Mod C)" },
-    { id: "pipeline", label: "Pipeline Negociaciones (Mod D)" },
-    { id: "matching", label: "Motor de Matching (Mod E)" },
-    { id: "comisiones", label: "Comisiones & Finanzas (Mod F)" },
-    { id: "reportes", label: "Métricas BI (Mod G)" },
-    { id: "configuracion", label: "Configuración Normativa (Mod H1)" },
+    { id: "terrenos", label: "Terrenos" },
+    { id: "documentos", label: "Documentos & CPU" },
+    { id: "pipeline", label: "Pipeline Negociaciones" },
+    { id: "matching", label: "Motor de Matching" },
+    { id: "comisiones", label: "Comisiones & Finanzas" },
+    { id: "reportes", label: "Métricas BI" },
+    { id: "configuracion", label: "Configuración Normativa" },
     { id: "gis", label: "Infraestructura GIS & DB" },
     { id: "seguridad", label: "Seguridad & Auth" },
   ];
