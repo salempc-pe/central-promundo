@@ -1,8 +1,9 @@
-import { TerrenoCompleto, TerrenoFiltros, ClientMatchResult } from "@/types";
-import { mockTerrenosCompletos } from "@/lib/mock/terrenos-seed";
+import { TerrenoCompleto, TerrenoFiltros, ClientMatchResult, Propietario } from "@/types";
+import { mockTerrenosCompletos, mockPropietarios } from "@/lib/mock/terrenos-seed";
 import { calcularMatchingTerreno } from "./matching";
 
 let memoryTerrenos: TerrenoCompleto[] = [...mockTerrenosCompletos];
+let memoryPropietarios: Propietario[] = [...mockPropietarios];
 
 /**
  * Consulta y filtra el inventario de terrenos en memoria / DB
@@ -101,4 +102,39 @@ export async function updateTerrenoEnMemoria(
   };
 
   return memoryTerrenos[index];
+}
+
+export async function getPropietarios(): Promise<Propietario[]> {
+  return [...memoryPropietarios];
+}
+
+export async function createPropietarioEnMemoria(
+  data: Omit<Propietario, "id" | "createdAt" | "updatedAt">
+): Promise<Propietario> {
+  const nuevo: Propietario = {
+    ...data,
+    id: `prop-${Date.now().toString(36)}`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  memoryPropietarios.unshift(nuevo);
+  return nuevo;
+}
+
+export async function createTerrenoEnMemoria(
+  data: Omit<TerrenoCompleto, "id" | "createdAt" | "updatedAt"> & { id?: string }
+): Promise<TerrenoCompleto> {
+  const now = new Date();
+  const id = data.id || `tr-${Date.now().toString(36)}`;
+  const nuevo: TerrenoCompleto = {
+    ...data,
+    id,
+    createdAt: now,
+    updatedAt: now,
+    documentos: data.documentos || [],
+    negociaciones: data.negociaciones || [],
+  };
+
+  memoryTerrenos.unshift(nuevo);
+  return nuevo;
 }

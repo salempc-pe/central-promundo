@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { getTerrenos } from "@/lib/services/terrenos";
+import { getTerrenos, getPropietarios } from "@/lib/services/terrenos";
 import { TerrenosClient } from "./terrenos-client";
 
 export const metadata = {
@@ -8,7 +8,10 @@ export const metadata = {
 };
 
 export default async function TerrenosPage() {
-  const initialTerrenos = await getTerrenos();
+  const [initialTerrenos, initialPropietarios] = await Promise.all([
+    getTerrenos(),
+    getPropietarios(),
+  ]);
 
   return (
     <Suspense
@@ -18,7 +21,10 @@ export default async function TerrenosPage() {
         </div>
       }
     >
-      <TerrenosClient initialTerrenos={initialTerrenos} />
+      <TerrenosClient
+        initialTerrenos={initialTerrenos}
+        initialPropietarios={initialPropietarios}
+      />
     </Suspense>
   );
 }

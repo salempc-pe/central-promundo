@@ -31,6 +31,7 @@ interface TerrenosToolbarProps {
   onExportExcel: () => void;
   totalFiltrados: number;
   totalGeneral: number;
+  onNuevoLote?: () => void;
 }
 
 export function TerrenosToolbar({
@@ -43,6 +44,7 @@ export function TerrenosToolbar({
   onExportExcel,
   totalFiltrados,
   totalGeneral,
+  onNuevoLote,
 }: TerrenosToolbarProps) {
   const leafColumns = table?.getAllLeafColumns?.() || [];
 
@@ -169,7 +171,11 @@ export function TerrenosToolbar({
         </Button>
 
         {/* Registrar Lote */}
-        <Button size="sm" className="h-7 text-2xs font-mono gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+        <Button
+          size="sm"
+          onClick={onNuevoLote}
+          className="h-7 text-2xs font-mono gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shadow-xs"
+        >
           <Plus className="w-3.5 h-3.5" />
           <span>Nuevo Lote</span>
         </Button>

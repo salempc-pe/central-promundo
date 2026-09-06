@@ -11,27 +11,35 @@ import {
   VisibilityState,
   RowSelectionState,
 } from "@tanstack/react-table";
-import { TerrenoCompleto, TerrenoFiltros } from "@/types";
+import { TerrenoCompleto, TerrenoFiltros, Propietario } from "@/types";
 import { getTerrenosColumns } from "@/components/terrenos/terrenos-columns";
 import { TerrenosFilters } from "@/components/terrenos/terrenos-filters";
 import { TerrenosToolbar } from "@/components/terrenos/terrenos-toolbar";
 import { ActiveFilterChips } from "@/components/terrenos/active-filter-chips";
 import { TerrenosTable } from "@/components/terrenos/terrenos-table";
 import { TerrenoDetailSheet } from "@/components/terrenos/terreno-detail-sheet";
+import { TerrenoCreateDialog } from "@/components/terrenos/terreno-create-dialog";
 import { exportarTerrenosAExcel } from "@/lib/export-excel";
+import { createTerrenoEnMemoria, createPropietarioEnMemoria } from "@/lib/services/terrenos";
 
 interface TerrenosClientProps {
   initialTerrenos: TerrenoCompleto[];
+  initialPropietarios?: Propietario[];
 }
 
-export function TerrenosClient({ initialTerrenos }: TerrenosClientProps) {
+export function TerrenosClient({
+  initialTerrenos,
+  initialPropietarios = [],
+}: TerrenosClientProps) {
   const searchParams = useSearchParams();
-  const [terrenosList] = useState<TerrenoCompleto[]>(initialTerrenos);
+  const [terrenosList, setTerrenosList] = useState<TerrenoCompleto[]>(initialTerrenos);
+  const [propietariosList, setPropietariosList] = useState<Propietario[]>(initialPropietarios);
   const [filtros, setFiltros] = useState<TerrenoFiltros>({});
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [selectedTerreno, setSelectedTerreno] = useState<TerrenoCompleto | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailTab, setDetailTab] = useState("ficha");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Sincronizar desde searchParams al navegar desde el Dashboard, Header u otros módulos
   useEffect(() => {
@@ -231,6 +239,24 @@ export function TerrenosClient({ initialTerrenos }: TerrenosClientProps) {
     exportarTerrenosAExcel(filteredTerrenos, filtros);
   };
 
+  // Manejador para registrar nuevo lote
+  const handleCreateTerreno = async (nuevoTerreno: TerrenoCompleto) => {
+    await createTerrenoEnMemoria(nuevoTerreno);
+    setTerrenosList((prev) => [nuevoTerreno, ...prev]);
+    setSelectedTerreno(nuevoTerreno);
+    setDetailTab("ficha");
+    setIsDetailOpen(true);
+  };
+
+  // Manejador para registrar nuevo titular desde el modal
+  const handleCreatePropietario = async (
+    data: Omit<Propietario, "id" | "createdAt" | "updatedAt">
+  ) => {
+    const nuevo = await createPropietarioEnMemoria(data);
+    setPropietariosList((prev) => [nuevo, ...prev]);
+    return nuevo;
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-3.75rem)] -m-3 overflow-hidden bg-slate-100">
       {/* Barra de herramientas superior */}
@@ -244,6 +270,7 @@ export function TerrenosClient({ initialTerrenos }: TerrenosClientProps) {
         onExportExcel={handleExportExcel}
         totalFiltrados={filteredTerrenos.length}
         totalGeneral={terrenosList.length}
+        onNuevoLote={() => setIsCreateOpen(true)}
       />
 
       {/* Barra de chips de filtros activos */}
@@ -284,6 +311,16 @@ export function TerrenosClient({ initialTerrenos }: TerrenosClientProps) {
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         defaultTab={detailTab}
+      />
+
+      {/* Diálogo de Alta de Nuevo Lote */}
+      <TerrenoCreateDialog
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSubmit={handleCreateTerreno}
+        propietariosDisponibles={propietariosList}
+        onCrearPropietario={handleCreatePropietario}
+        totalTerrenosCount={terrenosList.length}
       />
     </div>
   );
