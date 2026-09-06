@@ -3,15 +3,47 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Search, RefreshCw, Check } from "lucide-react";
+import { Bell, Search, RefreshCw, Check, LogOut, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getCurrentUserSession, signOutAction, fetchPendientesCountAction } from "@/app/auth/actions";
+import { createClient } from "@/lib/supabase/client";
 
 export function Header() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
+  const [pendientesCount, setPendientesCount] = useState<number>(0);
+  const [userSession, setUserSession] = useState<{
+    nombre: string;
+    email: string;
+    rol: string;
+    isSuperAdmin: boolean;
+  }>({
+    nombre: "Paulo Salem",
+    email: "paulosalem8@gmail.com",
+    rol: "admin",
+    isSuperAdmin: true,
+  });
+
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    getCurrentUserSession().then((u) => {
+      if (u) {
+        setUserSession({
+          nombre: u.nombre,
+          email: u.email,
+          rol: u.rol,
+          isSuperAdmin: u.isSuperAdmin,
+        });
+      }
+    }).catch(() => {});
+
+    fetchPendientesCountAction().then((c) => {
+      setPendientesCount(c);
+    }).catch(() => {});
+  }, []);
 
   // Atajo global Ctrl+K / Cmd+K para enfocar la barra de búsqueda
   useEffect(() => {
@@ -42,6 +74,24 @@ export function Header() {
       setTimeout(() => setSyncDone(false), 2500);
     }, 700);
   };
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      await signOutAction();
+      router.push("/login");
+    } catch {
+      router.push("/login");
+    }
+  };
+
+  const userInitials = userSession.nombre
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <header className="h-10 border-b border-slate-200 bg-white px-3 flex items-center justify-between shrink-0 select-none">
@@ -117,25 +167,56 @@ export function Header() {
           )}
         </Button>
 
-        <Link href="/auditoria" title="Ver bitácora de auditoría y notificaciones">
+        {/* Campana de Notificaciones con Badge para Solicitudes Pendientes */}
+        <Link
+          href={pendientesCount > 0 ? "/accesos" : "/auditoria"}
+          title={
+            pendientesCount > 0
+              ? `${pendientesCount} solicitud(es) de acceso pendiente(s)`
+              : "Ver bitácora de auditoría"
+          }
+          className="relative"
+        >
           <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-600 hover:text-slate-900">
             <Bell className="w-3.5 h-3.5" />
           </Button>
+          {pendientesCount > 0 && (
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white animate-pulse" />
+          )}
         </Link>
 
+        {/* Perfil del Usuario Activo */}
         <Link
           href="/configuracion"
-          className="flex items-center space-x-2 pl-2 border-l border-slate-200 hover:opacity-80 transition-opacity"
-          title="Configuración del sistema"
+          className="flex items-center space-x-2 pl-2 border-l border-slate-200 hover:opacity-85 transition-opacity"
+          title="Perfil y configuración de cuenta"
         >
-          <div className="w-5 h-5 rounded bg-slate-200 flex items-center justify-center text-slate-700 text-2xs font-bold">
-            JR
+          <div className="w-6 h-6 rounded bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center text-3xs font-bold font-mono">
+            {userInitials || "PS"}
           </div>
           <div className="text-2xs leading-tight">
-            <div className="font-semibold text-slate-800">Broker Principal</div>
-            <div className="text-3xs text-slate-400 font-mono">admin@promundo.pe</div>
+            <div className="font-semibold text-slate-900 flex items-center gap-1">
+              <span>{userSession.nombre}</span>
+              <span className="text-3xs font-mono font-bold bg-slate-100 text-slate-600 px-1 rounded">
+                {userSession.rol.toUpperCase()}
+              </span>
+            </div>
+            <div className="text-3xs text-slate-400 font-mono truncate max-w-[140px]">
+              {userSession.email}
+            </div>
           </div>
         </Link>
+
+        {/* Botón de Cerrar Sesión */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleSignOut}
+          className="h-7 w-7 text-slate-400 hover:text-rose-600 hover:bg-rose-50 ml-1 rounded"
+          title="Cerrar sesión institucional"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </Button>
       </div>
     </header>
   );

@@ -6,6 +6,12 @@ export const rolUsuarioEnum = pgEnum("rol_usuario", [
   "broker_junior",
 ]);
 
+export const estadoAccesoEnum = pgEnum("estado_acceso", [
+  "pendiente",
+  "aprobado",
+  "denegado",
+]);
+
 export const tipoDocumentoEnum = pgEnum("tipo_documento", [
   "Certificado_Parametros",
   "Partida_Registral",

@@ -11,7 +11,9 @@ import {
   ArrowUpRight,
   ExternalLink,
   Plus,
+  ShieldCheck,
 } from "lucide-react";
+import { getSolicitudesPendientesCount } from "@/lib/services/auth-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,9 +111,31 @@ const terrenosMuestra = [
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const pendientesCount = await getSolicitudesPendientesCount();
+
   return (
     <div className="space-y-3">
+      {/* Banner de Solicitudes Pendientes para el Administrador */}
+      {pendientesCount > 0 && (
+        <div className="bg-amber-50/90 border border-amber-300 rounded px-3 py-2 flex items-center justify-between text-2xs text-amber-900 shadow-2xs">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+            <span>
+              <strong>Alerta de Acceso Institucional:</strong> Hay{" "}
+              <strong className="font-mono font-bold underline">{pendientesCount} solicitud(es) de acceso</strong> vía Google en espera de revisión fiduciaria. Los postulantes no tienen acceso al catálogo de suelo.
+            </span>
+          </div>
+          <Link
+            href="/accesos"
+            className="flex items-center gap-1 font-mono font-bold text-amber-800 hover:text-amber-950 hover:underline shrink-0 bg-white/70 border border-amber-300 px-2 py-0.5 rounded text-3xs"
+          >
+            <ShieldCheck className="w-3 h-3 text-amber-600" />
+            <span>Gestionar Solicitudes &rarr;</span>
+          </Link>
+        </div>
+      )}
+
       {/* Título de Sección y Acciones Rápidas */}
       <div className="flex items-center justify-between">
         <div>

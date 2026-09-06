@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
   LucideIcon,
@@ -26,6 +27,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { fetchPendientesCountAction } from "@/app/auth/actions";
 
 export interface NavItem {
   title: string;
@@ -94,6 +96,11 @@ const navigationItems: NavGroup[] = [
     category: "SISTEMA",
     items: [
       {
+        title: "Gestión de Accesos",
+        href: "/accesos",
+        icon: ShieldCheck,
+      },
+      {
         title: "Configuración GIS / DB",
         href: "/configuracion",
         icon: Settings,
@@ -117,6 +124,14 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [pendientesCount, setPendientesCount] = useState<number>(0);
+
+  // Consulta reactiva de solicitudes de acceso pendientes
+  useEffect(() => {
+    fetchPendientesCountAction()
+      .then((count) => setPendientesCount(count))
+      .catch(() => {});
+  }, [pathname]);
 
   // Inicialización segura tras montaje para prevenir hydration mismatch
   useEffect(() => {
@@ -282,7 +297,13 @@ export function Sidebar({ className }: SidebarProps) {
                       )}
                     </div>
 
-                    {!isCollapsed && item.badge && (
+                    {!isCollapsed && item.href === "/accesos" && pendientesCount > 0 && (
+                      <span className="text-3xs px-1.5 py-0.2 rounded font-mono font-bold shrink-0 bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                        {pendientesCount} pend.
+                      </span>
+                    )}
+
+                    {!isCollapsed && item.badge && item.href !== "/accesos" && (
                       <span
                         className={cn(
                           "text-3xs px-1 py-0.2 rounded font-mono font-bold shrink-0",
@@ -301,16 +322,23 @@ export function Sidebar({ className }: SidebarProps) {
                 if (isCollapsed) {
                   return (
                     <Tooltip key={item.href}>
-                      <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                      <TooltipTrigger asChild>
+                        <div className="relative">
+                          {linkContent}
+                          {item.href === "/accesos" && pendientesCount > 0 && (
+                            <span className="absolute top-0 right-1 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white animate-ping" />
+                          )}
+                        </div>
+                      </TooltipTrigger>
                       <TooltipContent
                         side="right"
                         sideOffset={10}
                         className="flex items-center gap-1.5 text-xs py-1 px-2.5 z-50 shadow-md"
                       >
                         <span className="font-sans font-medium text-slate-900">{item.title}</span>
-                        {item.badge && (
-                          <span className="text-3xs px-1 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono font-bold">
-                            {item.badge}
+                        {item.href === "/accesos" && pendientesCount > 0 && (
+                          <span className="text-3xs px-1 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono font-bold">
+                            {pendientesCount} pendientes
                           </span>
                         )}
                       </TooltipContent>

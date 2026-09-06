@@ -15,6 +15,7 @@ import { sql } from "drizzle-orm";
 import { postgisGeometryPoint } from "./custom-types";
 import {
   rolUsuarioEnum,
+  estadoAccesoEnum,
   tipoDocumentoEnum,
   monedaEnum,
   estadoTerrenoEnum,
@@ -24,14 +25,21 @@ import {
   estadoPagoComisionEnum,
 } from "./enums";
 
-// 1. USUARIOS (Brokers y Administradores)
+// 1. USUARIOS (Brokers y Administradores con Control de Acceso)
 export const usuarios = pgTable(
   "usuarios",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    authId: text("auth_id"), // ID de Supabase Auth
     nombre: varchar("nombre", { length: 255 }).notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
+    avatarUrl: text("avatar_url"),
     rol: rolUsuarioEnum("rol").notNull().default("broker_junior"),
+    estadoAcceso: estadoAccesoEnum("estado_acceso").notNull().default("pendiente"),
+    fechaSolicitud: timestamp("fecha_solicitud", { withTimezone: true }).defaultNow().notNull(),
+    fechaResolucion: timestamp("fecha_resolucion", { withTimezone: true }),
+    resueltoPor: varchar("resuelto_por", { length: 255 }),
+    notas: text("notas"),
     activo: boolean("activo").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -39,6 +47,8 @@ export const usuarios = pgTable(
   (table) => ({
     emailIdx: index("usuarios_email_idx").on(table.email),
     rolIdx: index("usuarios_rol_idx").on(table.rol),
+    estadoAccesoIdx: index("usuarios_estado_acceso_idx").on(table.estadoAcceso),
+    authIdIdx: index("usuarios_auth_id_idx").on(table.authId),
   })
 );
 

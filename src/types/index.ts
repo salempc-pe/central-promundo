@@ -80,4 +80,5 @@ export * from "./comisiones";
 export * from "./reportes";
 export * from "./configuracion";
 export * from "./auditoria";
+export * from "./auth";
 
