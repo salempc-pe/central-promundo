@@ -4,9 +4,17 @@ import { cookies } from "next/headers";
 import { registrarOActualizarUsuarioOAuth, SUPER_ADMIN_EMAIL } from "@/lib/services/auth-service";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const searchParams = requestUrl.searchParams;
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
+
+  // En Vercel o proxies inversos, obtener el origin real desde x-forwarded-host
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : requestUrl.origin;
 
   if (code) {
     const cookieStore = cookies();
