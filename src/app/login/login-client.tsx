@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ShieldCheck, Lock, AlertCircle, Building2, ExternalLink, UserPlus } from "lucide-react";
+import { Lock, AlertCircle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { simularLoginAction } from "@/app/auth/actions";
 
 interface LoginClientProps {
   errorMsg?: string | null;
@@ -58,9 +57,6 @@ export function LoginClient({ errorMsg }: LoginClientProps) {
               <h1 className="text-sm font-bold text-slate-900 tracking-tight">
                 CENTRAL PROMUNDO
               </h1>
-              <span className="text-3xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
-                SISTEMA v2.5
-              </span>
             </div>
             <p className="text-2xs text-slate-500 font-medium">
               Suelo Institucional & Banca de Tierras de Inversión
@@ -123,57 +119,6 @@ export function LoginClient({ errorMsg }: LoginClientProps) {
                 <span>Continuar con Google</span>
               </>
             )}
-          </Button>
-
-          {/* Separador Institucional */}
-          <div className="relative flex items-center justify-center my-3">
-            <div className="border-t border-slate-200 w-full" />
-            <span className="bg-white px-2 text-3xs font-mono text-slate-400 uppercase tracking-widest shrink-0">
-              ACCESO RÁPIDO & PRUEBAS
-            </span>
-          </div>
-
-          {/* Acceso Directo Superadmin */}
-          <Button
-            type="button"
-            variant="default"
-            disabled={isLoading}
-            onClick={async () => {
-              try {
-                setIsLoading(true);
-                const res = await simularLoginAction("paulosalem8@gmail.com", "Paulo Salem");
-                if (res.redirect) window.location.href = res.redirect;
-              } catch {
-                setError("Error al iniciar sesión como superadministrador.");
-                setIsLoading(false);
-              }
-            }}
-            className="w-full h-9 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs flex items-center justify-center space-x-2"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-            <span>Entrar como Superadministrador (paulosalem8@gmail.com)</span>
-          </Button>
-
-          {/* Simular Postulante Pendiente */}
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isLoading}
-            onClick={async () => {
-              try {
-                setIsLoading(true);
-                const testEmail = `postulante.${Date.now().toString().slice(-4)}@gmail.com`;
-                const res = await simularLoginAction(testEmail, "Postulante de Prueba");
-                if (res.redirect) window.location.href = res.redirect;
-              } catch {
-                setError("Error al simular ingreso de postulante.");
-                setIsLoading(false);
-              }
-            }}
-            className="w-full h-8 bg-slate-50 hover:bg-slate-100 border-dashed border-slate-300 text-slate-700 text-2xs font-mono flex items-center justify-center space-x-1.5"
-          >
-            <UserPlus className="w-3 h-3 text-slate-500" />
-            <span>Simular Postulante Pendiente (Probar Sala de Espera)</span>
           </Button>
         </div>
 
