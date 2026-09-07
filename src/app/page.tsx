@@ -303,8 +303,8 @@ export default async function DashboardPage() {
                 <span className="text-slate-800 font-semibold">GIST(geom)</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Datos Mock:</span>
-                <span className="text-emerald-600 font-semibold">0% (100% Persistido)</span>
+                <span className="text-slate-500">Persistencia de Datos:</span>
+                <span className="text-emerald-600 font-semibold">100% PostgreSQL Real</span>
               </div>
             </CardContent>
           </Card>
