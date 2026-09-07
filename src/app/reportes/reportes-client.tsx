@@ -11,15 +11,8 @@ import {
   EmbudoEtapaItem,
   ReporteEjecutivo,
 } from "@/types/reportes";
-import {
-  getReportesKpisGenerales,
-  getEvolucionTemporal,
-  getRankingBrokers,
-  getAbsorcionMercado,
-  getEmbudoConversion,
-  getReporteEjecutivo,
-} from "@/lib/services/reportes";
-import { mockUsuarios } from "@/lib/mock/negociaciones-seed";
+import { getReportesDataAction } from "@/lib/actions/reportes-actions";
+import { getBrokersAction } from "@/lib/actions/pipeline-actions";
 import { exportarReportesAExcel } from "@/lib/export-reportes";
 import { ReportesKpiBanner } from "@/components/reportes/reportes-kpi-banner";
 import { ReportesToolbar } from "@/components/reportes/reportes-toolbar";
@@ -29,8 +22,17 @@ import { RankingBrokersTable } from "@/components/reportes/ranking-brokers-table
 import { AbsorcionMercadoGrid } from "@/components/reportes/absorcion-mercado-grid";
 import { ReporteEjecutivoModal } from "@/components/reportes/reporte-ejecutivo-modal";
 import { TrendingUp, ShieldCheck } from "lucide-react";
+import { Usuario } from "@/types";
 
-export function ReportesClient() {
+interface ReportesClientProps {
+  initialReporte?: ReporteEjecutivo | null;
+  initialBrokers?: Usuario[];
+}
+
+export function ReportesClient({
+  initialReporte = null,
+  initialBrokers = [],
+}: ReportesClientProps = {}) {
   const searchParams = useSearchParams();
   const [filtros, setFiltros] = useState<FiltroReportes>({
     rangoPeriodo: "YTD",
@@ -49,56 +51,59 @@ export function ReportesClient() {
     }
   }, [searchParams]);
 
-  const [kpis, setKpis] = useState<ReportesKpisGenerales | null>(null);
-  const [evolucion, setEvolucion] = useState<EvolucionPeriodo[]>([]);
-  const [rankingBrokers, setRankingBrokers] = useState<RankingBrokerItem[]>([]);
+  const [kpis, setKpis] = useState<ReportesKpisGenerales | null>(
+    initialReporte?.kpis || null
+  );
+  const [evolucion, setEvolucion] = useState<EvolucionPeriodo[]>(
+    initialReporte?.evolucion || []
+  );
+  const [rankingBrokers, setRankingBrokers] = useState<RankingBrokerItem[]>(
+    initialReporte?.rankingBrokers || []
+  );
   const [absorcionMercado, setAbsorcionMercado] = useState<
     AbsorcionDistritoItem[]
-  >([]);
-  const [embudo, setEmbudo] = useState<EmbudoEtapaItem[]>([]);
+  >(initialReporte?.absorcionMercado || []);
+  const [embudo, setEmbudo] = useState<EmbudoEtapaItem[]>(
+    initialReporte?.embudo || []
+  );
   const [reporteEjecutivo, setReporteEjecutivo] =
-    useState<ReporteEjecutivo | null>(null);
+    useState<ReporteEjecutivo | null>(initialReporte);
 
-  const [loading, setLoading] = useState(true);
+  const [brokers, setBrokers] = useState<Usuario[]>(initialBrokers);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (!initialBrokers || initialBrokers.length === 0) {
+      getBrokersAction().then((loaded) => {
+        if (loaded && loaded.length > 0) setBrokers(loaded);
+      });
+    }
+  }, [initialBrokers]);
+
   const brokersDisponibles = useMemo(() => {
-    return mockUsuarios.map((u) => ({ id: u.id, nombre: u.nombre }));
-  }, []);
+    return brokers.map((u) => ({ id: u.id, nombre: u.nombre }));
+  }, [brokers]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [
-        kpisData,
-        evolucionData,
-        rankingData,
-        absorcionData,
-        embudoData,
-        reporteData,
-      ] = await Promise.all([
-        getReportesKpisGenerales(filtros),
-        getEvolucionTemporal(filtros),
-        getRankingBrokers(filtros),
-        getAbsorcionMercado(filtros),
-        getEmbudoConversion(filtros),
-        getReporteEjecutivo(filtros),
-      ]);
-
-      setKpis(kpisData);
-      setEvolucion(evolucionData);
-      setRankingBrokers(rankingData);
-      setAbsorcionMercado(absorcionData);
-      setEmbudo(embudoData);
-      setReporteEjecutivo(reporteData);
+      const data = await getReportesDataAction(filtros);
+      setKpis(data.kpis);
+      setEvolucion(data.evolucion);
+      setRankingBrokers(data.rankingBrokers);
+      setAbsorcionMercado(data.absorcionMercado);
+      setEmbudo(data.embudo);
+      setReporteEjecutivo(data);
     } catch (err) {
-      console.error("Error al cargar datos analíticos de reportes:", err);
+      console.error("Error al cargar datos analíticos de reportes en PostgreSQL:", err);
     } finally {
       setLoading(false);
     }
   }, [filtros]);
 
   useEffect(() => {
+    // Si se modifica algún filtro, recargar desde PostgreSQL
     loadData();
   }, [loadData]);
 
@@ -126,7 +131,7 @@ export function ReportesClient() {
                 Métricas, Rendimiento BI & Reportes Ejecutivos
               </h1>
               <span className="text-3xs font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                Módulo G
+                Módulo G (PostgreSQL)
               </span>
             </div>
             <p className="text-3xs text-slate-500 font-mono">
@@ -138,7 +143,7 @@ export function ReportesClient() {
         <div className="flex items-center space-x-3 text-3xs font-mono text-slate-500">
           <div className="flex items-center space-x-1 bg-slate-50 px-2 py-1 rounded border border-slate-200">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Motor BI Reactivo Online</span>
+            <span>Motor BI Reactivo PostgreSQL</span>
           </div>
           <div className="hidden md:flex items-center space-x-1">
             <span>Arancel Base:</span>
@@ -159,7 +164,7 @@ export function ReportesClient() {
         brokersDisponibles={brokersDisponibles}
       />
 
-      {/* Grid Principal Fila 1: Evolución Cronológica (60%) + Embudo de Conversión (40%) */}
+      {/* Grid Principal Fila 1: Evolución Cronológica + Embudo de Conversión */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
         <div className="lg:col-span-7">
           <EvolucionFinancieraChart data={evolucion} />
@@ -169,7 +174,7 @@ export function ReportesClient() {
         </div>
       </div>
 
-      {/* Grid Principal Fila 2: League Table de Brokers (55%) + Matriz de Absorción (45%) */}
+      {/* Grid Principal Fila 2: League Table de Brokers + Matriz de Absorción */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
         <div className="lg:col-span-6">
           <RankingBrokersTable data={rankingBrokers} />

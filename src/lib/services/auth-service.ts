@@ -11,76 +11,8 @@ import {
 
 export { SUPER_ADMIN_EMAIL };
 
-// Usuarios de respaldo en memoria si la conexión a base de datos estuviese en inicialización
-const mockUsuariosState: SolicitudAcceso[] = [
-  {
-    id: "1e2bfd92-0411-41ff-be42-16327ad1fc01",
-    authId: null,
-    nombre: "Paulo Salem",
-    email: SUPER_ADMIN_EMAIL,
-    avatarUrl: null,
-    rol: "admin",
-    estadoAcceso: "aprobado",
-    fechaSolicitud: new Date("2026-09-01T08:00:00Z"),
-    fechaResolucion: new Date("2026-09-01T08:00:00Z"),
-    resueltoPor: "SYSTEM_INIT",
-    notas: "Superadministrador Principal del Sistema Promundo",
-    activo: true,
-    createdAt: new Date("2026-09-01T08:00:00Z"),
-    updatedAt: new Date("2026-09-01T08:00:00Z"),
-  },
-  {
-    id: "2a3bfd92-0411-41ff-be42-16327ad1fc02",
-    authId: null,
-    nombre: "Carlos Mendoza Silva",
-    email: "cmendoza@constructora-urbana.pe",
-    avatarUrl: null,
-    rol: "broker_senior",
-    estadoAcceso: "aprobado",
-    fechaSolicitud: new Date("2026-09-04T10:15:00Z"),
-    fechaResolucion: new Date("2026-09-04T11:00:00Z"),
-    resueltoPor: SUPER_ADMIN_EMAIL,
-    notas: "Broker Senior - Zona San Isidro y Miraflores",
-    activo: true,
-    createdAt: new Date("2026-09-04T10:15:00Z"),
-    updatedAt: new Date("2026-09-04T11:00:00Z"),
-  },
-  {
-    id: "3c4bfd92-0411-41ff-be42-16327ad1fc03",
-    authId: null,
-    nombre: "Andrea Valdivia Roca",
-    email: "andrea.valdivia.inversiones@gmail.com",
-    avatarUrl: null,
-    rol: "broker_junior",
-    estadoAcceso: "pendiente",
-    fechaSolicitud: new Date("2026-09-06T00:45:00Z"),
-    fechaResolucion: null,
-    resueltoPor: null,
-    notas: "Solicitó ingreso vía Google Sign-In. Esperando validación de credenciales.",
-    activo: false,
-    createdAt: new Date("2026-09-06T00:45:00Z"),
-    updatedAt: new Date("2026-09-06T00:45:00Z"),
-  },
-  {
-    id: "4d5bfd92-0411-41ff-be42-16327ad1fc04",
-    authId: null,
-    nombre: "Rodrigo Morales Grau",
-    email: "rodrigo.morales@desarrollos-peru.com",
-    avatarUrl: null,
-    rol: "broker_junior",
-    estadoAcceso: "pendiente",
-    fechaSolicitud: new Date("2026-09-06T01:10:00Z"),
-    fechaResolucion: null,
-    resueltoPor: null,
-    notas: "Postulación para gestión de suelo multifamiliar en Surco y La Molina.",
-    activo: false,
-    createdAt: new Date("2026-09-06T01:10:00Z"),
-    updatedAt: new Date("2026-09-06T01:10:00Z"),
-  },
-];
-
 /**
- * Obtener todos los usuarios y solicitudes de acceso
+ * Obtener todos los usuarios y solicitudes de acceso desde PostgreSQL
  */
 export async function getUsuariosSolicitudes(): Promise<SolicitudAcceso[]> {
   try {
@@ -109,10 +41,10 @@ export async function getUsuariosSolicitudes(): Promise<SolicitudAcceso[]> {
       }));
     }
   } catch (error) {
-    console.warn("authService.getUsuariosSolicitudes: Usando fallback en memoria", error);
+    console.error("authService.getUsuariosSolicitudes error:", error);
   }
 
-  return [...mockUsuariosState];
+  return [];
 }
 
 /**
@@ -127,13 +59,14 @@ export async function getSolicitudesPendientesCount(): Promise<number> {
       .where(eq(usuarios.estadoAcceso, "pendiente"));
 
     return result[0]?.count ?? 0;
-  } catch {
-    return mockUsuariosState.filter((u) => u.estadoAcceso === "pendiente").length;
+  } catch (error) {
+    console.error("authService.getSolicitudesPendientesCount error:", error);
+    return 0;
   }
 }
 
 /**
- * Obtener perfil de usuario por email
+ * Obtener perfil de usuario por email desde PostgreSQL
  */
 export async function getUsuarioByEmail(email: string): Promise<SolicitudAcceso | null> {
   const normalizedEmail = email.toLowerCase().trim();
@@ -162,16 +95,15 @@ export async function getUsuarioByEmail(email: string): Promise<SolicitudAcceso 
         updatedAt: row.updatedAt,
       };
     }
-  } catch {
-    // fallback
+  } catch (error) {
+    console.error("authService.getUsuarioByEmail error:", error);
   }
 
-  const found = mockUsuariosState.find((u) => u.email.toLowerCase() === normalizedEmail);
-  return found || null;
+  return null;
 }
 
 /**
- * Registrar o actualizar un usuario proveniente de Google OAuth
+ * Registrar o actualizar un usuario proveniente de Google OAuth en PostgreSQL
  */
 export async function registrarOActualizarUsuarioOAuth(params: {
   authId?: string;
@@ -182,35 +114,19 @@ export async function registrarOActualizarUsuarioOAuth(params: {
   const email = params.email.toLowerCase().trim();
   const isSuperAdmin = email === SUPER_ADMIN_EMAIL;
 
-  try {
-    const db = getDb();
-    const [existente] = await db.select().from(usuarios).where(eq(usuarios.email, email));
+  const db = getDb();
+  const [existente] = await db.select().from(usuarios).where(eq(usuarios.email, email));
 
-    if (existente) {
-      // Si es el superadmin, asegurar que esté aprobado y con rol admin
-      if (isSuperAdmin) {
-        const [actualizado] = await db
-          .update(usuarios)
-          .set({
-            authId: params.authId || existente.authId,
-            avatarUrl: params.avatarUrl || existente.avatarUrl,
-            rol: "admin",
-            estadoAcceso: "aprobado",
-            activo: true,
-            updatedAt: new Date(),
-          })
-          .where(eq(usuarios.id, existente.id))
-          .returning();
-
-        return actualizado as unknown as SolicitudAcceso;
-      }
-
-      // Si es usuario existente regular, actualizar avatar o authId
+  if (existente) {
+    if (isSuperAdmin) {
       const [actualizado] = await db
         .update(usuarios)
         .set({
           authId: params.authId || existente.authId,
           avatarUrl: params.avatarUrl || existente.avatarUrl,
+          rol: "admin",
+          estadoAcceso: "aprobado",
+          activo: true,
           updatedAt: new Date(),
         })
         .where(eq(usuarios.id, existente.id))
@@ -219,51 +135,37 @@ export async function registrarOActualizarUsuarioOAuth(params: {
       return actualizado as unknown as SolicitudAcceso;
     }
 
-    // Nuevo usuario:
-    const nuevo = await db
-      .insert(usuarios)
-      .values({
-        authId: params.authId || null,
-        email,
-        nombre: params.nombre || email.split("@")[0],
-        avatarUrl: params.avatarUrl || null,
-        rol: isSuperAdmin ? "admin" : "broker_junior",
-        estadoAcceso: isSuperAdmin ? "aprobado" : "pendiente",
-        activo: isSuperAdmin,
-        resueltoPor: isSuperAdmin ? "SYSTEM_INIT" : null,
-        notas: isSuperAdmin
-          ? "Superadministrador Principal del Sistema Promundo"
-          : "Solicitud registrada automáticamente vía Google Sign-In.",
+    const [actualizado] = await db
+      .update(usuarios)
+      .set({
+        authId: params.authId || existente.authId,
+        avatarUrl: params.avatarUrl || existente.avatarUrl,
+        updatedAt: new Date(),
       })
+      .where(eq(usuarios.id, existente.id))
       .returning();
 
-    return nuevo[0] as unknown as SolicitudAcceso;
-  } catch (error) {
-    console.warn("authService.registrarOActualizarUsuarioOAuth error en DB, usando memoria:", error);
+    return actualizado as unknown as SolicitudAcceso;
   }
 
-  // Fallback en memoria
-  let item = mockUsuariosState.find((u) => u.email.toLowerCase() === email);
-  if (!item) {
-    item = {
-      id: "mock-" + Date.now(),
+  const [nuevo] = await db
+    .insert(usuarios)
+    .values({
       authId: params.authId || null,
-      nombre: params.nombre || email.split("@")[0],
       email,
+      nombre: params.nombre || email.split("@")[0],
       avatarUrl: params.avatarUrl || null,
       rol: isSuperAdmin ? "admin" : "broker_junior",
       estadoAcceso: isSuperAdmin ? "aprobado" : "pendiente",
       activo: isSuperAdmin,
-      fechaSolicitud: new Date(),
-      fechaResolucion: isSuperAdmin ? new Date() : null,
       resueltoPor: isSuperAdmin ? "SYSTEM_INIT" : null,
-      notas: "Registrado vía Google Sign-In.",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    mockUsuariosState.unshift(item);
-  }
-  return item;
+      notas: isSuperAdmin
+        ? "Superadministrador Principal del Sistema Promundo"
+        : "Solicitud registrada automáticamente vía Google Sign-In.",
+    })
+    .returning();
+
+  return nuevo as unknown as SolicitudAcceso;
 }
 
 /**
@@ -295,24 +197,9 @@ export async function aprobarAcceso(
       return actualizado as unknown as SolicitudAcceso;
     }
   } catch (error) {
-    console.warn("authService.aprobarAcceso error en DB:", error);
+    console.error("authService.aprobarAcceso error en DB:", error);
   }
 
-  // Fallback memoria
-  const idx = mockUsuariosState.findIndex((u) => u.id === usuarioId);
-  if (idx !== -1) {
-    mockUsuariosState[idx] = {
-      ...mockUsuariosState[idx],
-      estadoAcceso: "aprobado",
-      rol,
-      activo: true,
-      fechaResolucion: new Date(),
-      resueltoPor: adminEmail,
-      notas: notas || "Acceso autorizado por la administración.",
-      updatedAt: new Date(),
-    };
-    return mockUsuariosState[idx];
-  }
   return null;
 }
 
@@ -324,13 +211,13 @@ export async function denegarAcceso(
   adminEmail: string = SUPER_ADMIN_EMAIL,
   motivo?: string
 ): Promise<SolicitudAcceso | null> {
-  const target = mockUsuariosState.find((u) => u.id === usuarioId);
-  if (target?.email === SUPER_ADMIN_EMAIL) {
-    throw new Error("El Superadministrador Principal no puede ser denegado.");
-  }
-
   try {
     const db = getDb();
+    const [target] = await db.select().from(usuarios).where(eq(usuarios.id, usuarioId));
+    if (target?.email === SUPER_ADMIN_EMAIL) {
+      throw new Error("El Superadministrador Principal no puede ser denegado.");
+    }
+
     const [actualizado] = await db
       .update(usuarios)
       .set({
@@ -348,23 +235,9 @@ export async function denegarAcceso(
       return actualizado as unknown as SolicitudAcceso;
     }
   } catch (error) {
-    console.warn("authService.denegarAcceso error en DB:", error);
+    console.error("authService.denegarAcceso error en DB:", error);
   }
 
-  // Fallback memoria
-  const idx = mockUsuariosState.findIndex((u) => u.id === usuarioId);
-  if (idx !== -1) {
-    mockUsuariosState[idx] = {
-      ...mockUsuariosState[idx],
-      estadoAcceso: "denegado",
-      activo: false,
-      fechaResolucion: new Date(),
-      resueltoPor: adminEmail,
-      notas: motivo || "Acceso denegado por la administración.",
-      updatedAt: new Date(),
-    };
-    return mockUsuariosState[idx];
-  }
   return null;
 }
 
@@ -376,13 +249,13 @@ export async function cambiarRolUsuario(
   nuevoRol: RolUsuario,
   adminEmail: string = SUPER_ADMIN_EMAIL
 ): Promise<SolicitudAcceso | null> {
-  const target = mockUsuariosState.find((u) => u.id === usuarioId);
-  if (target?.email === SUPER_ADMIN_EMAIL && nuevoRol !== "admin") {
-    throw new Error("El rol del Superadministrador Principal debe ser admin permanentemente.");
-  }
-
   try {
     const db = getDb();
+    const [target] = await db.select().from(usuarios).where(eq(usuarios.id, usuarioId));
+    if (target?.email === SUPER_ADMIN_EMAIL && nuevoRol !== "admin") {
+      throw new Error("El rol del Superadministrador Principal debe ser admin permanentemente.");
+    }
+
     const [actualizado] = await db
       .update(usuarios)
       .set({
@@ -397,18 +270,8 @@ export async function cambiarRolUsuario(
       return actualizado as unknown as SolicitudAcceso;
     }
   } catch (error) {
-    console.warn("authService.cambiarRolUsuario error en DB:", error);
+    console.error("authService.cambiarRolUsuario error en DB:", error);
   }
 
-  const idx = mockUsuariosState.findIndex((u) => u.id === usuarioId);
-  if (idx !== -1) {
-    mockUsuariosState[idx] = {
-      ...mockUsuariosState[idx],
-      rol: nuevoRol,
-      resueltoPor: adminEmail,
-      updatedAt: new Date(),
-    };
-    return mockUsuariosState[idx];
-  }
   return null;
 }

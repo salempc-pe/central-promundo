@@ -1,5 +1,5 @@
 import { type InferSelectModel, type InferInsertModel } from "drizzle-orm";
-import {
+import type {
   usuarios,
   propietarios,
   terrenos,

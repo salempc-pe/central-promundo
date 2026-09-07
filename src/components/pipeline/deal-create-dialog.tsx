@@ -43,6 +43,7 @@ interface DealCreateDialogProps {
   terrenosDisponibles: TerrenoCompleto[];
   clientesDisponibles: Cliente[];
   brokers: Usuario[];
+  currentUserId?: string;
 }
 
 export function DealCreateDialog({
@@ -52,6 +53,7 @@ export function DealCreateDialog({
   terrenosDisponibles,
   clientesDisponibles,
   brokers,
+  currentUserId,
 }: DealCreateDialogProps) {
   const [terrenoId, setTerrenoId] = useState<string>(
     terrenosDisponibles[0]?.id || ""
@@ -59,7 +61,12 @@ export function DealCreateDialog({
   const [clienteId, setClienteId] = useState<string>(
     clientesDisponibles[0]?.id || ""
   );
-  const [brokerId, setBrokerId] = useState<string>(brokers[0]?.id || "");
+  const [brokerId, setBrokerId] = useState<string>(() => {
+    if (currentUserId && brokers.some((b) => b.id === currentUserId)) {
+      return currentUserId;
+    }
+    return brokers[0]?.id || "";
+  });
   const [etapaInicial, setEtapaInicial] = useState<EtapaNegociacion>("Ficha_Enviada");
   const [montoOferta, setMontoOferta] = useState<string>(
     terrenosDisponibles[0]?.precioTotal || "3000000"
@@ -70,6 +77,26 @@ export function DealCreateDialog({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Bandera de inicialización para ejecutar la preselección de broker únicamente al abrir el diálogo
+  const hasInitializedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      hasInitializedRef.current = false;
+      return;
+    }
+
+    // Solo inicializar una vez por apertura cuando la lista de brokers esté disponible
+    if (!hasInitializedRef.current && brokers.length > 0) {
+      if (currentUserId && brokers.some((b) => b.id === currentUserId)) {
+        setBrokerId(currentUserId);
+      } else if (brokers[0]?.id) {
+        setBrokerId(brokers[0].id);
+      }
+      hasInitializedRef.current = true;
+    }
+  }, [isOpen, currentUserId, brokers]);
 
   const handleTerrenoChange = (id: string) => {
     setTerrenoId(id);
@@ -110,7 +137,7 @@ export function DealCreateDialog({
       await onSubmit({
         terrenoId,
         clienteId,
-        brokerId: brokerId || brokers[0]?.id || "usr-01",
+        brokerId: brokerId || brokers[0]?.id || "",
         etapaInicial,
         montoOferta: montoNum,
         probabilidadCierre: Number(probabilidad),
@@ -194,12 +221,25 @@ export function DealCreateDialog({
               </label>
               <Select value={brokerId} onValueChange={setBrokerId}>
                 <SelectTrigger className="h-8 text-xs font-mono bg-white border-slate-300">
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccionar broker responsable..." />
                 </SelectTrigger>
-                <SelectContent className="text-xs font-mono">
+                <SelectContent className="text-xs font-mono max-h-56">
                   {brokers.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
-                      {b.nombre}
+                      <div className="flex items-center justify-between gap-3 w-full pr-2">
+                        <span className="font-semibold text-slate-900">{b.nombre}</span>
+                        <span
+                          className={`text-3xs px-1.5 py-0.5 rounded font-sans uppercase tracking-wider border ${
+                            b.rol === "admin"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : b.rol === "broker_senior"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
+                          }`}
+                        >
+                          {b.rol.replace("_", " ")}
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

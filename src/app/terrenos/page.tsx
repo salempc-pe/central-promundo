@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import { getTerrenos, getPropietarios } from "@/lib/services/terrenos";
+import { getClientesAction } from "@/lib/actions/pipeline-actions";
 import { TerrenosClient } from "./terrenos-client";
 
 export const metadata = {
@@ -7,10 +8,13 @@ export const metadata = {
   description: "Data Grid interactivo de suelo institucional para fondos y constructoras en Lima Metropolitana",
 };
 
+export const revalidate = 0;
+
 export default async function TerrenosPage() {
-  const [initialTerrenos, initialPropietarios] = await Promise.all([
+  const [initialTerrenos, initialPropietarios, initialClientes] = await Promise.all([
     getTerrenos(),
     getPropietarios(),
+    getClientesAction(),
   ]);
 
   return (
@@ -24,6 +28,7 @@ export default async function TerrenosPage() {
       <TerrenosClient
         initialTerrenos={initialTerrenos}
         initialPropietarios={initialPropietarios}
+        initialClientes={initialClientes}
       />
     </Suspense>
   );

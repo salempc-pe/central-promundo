@@ -8,21 +8,21 @@ import { resolve } from "path";
 
 // Bounding Boxes oficiales de distritos de Lima Metropolitana (WGS84 EPSG:4326)
 const LIMA_DISTRICT_BOUNDS = {
-  Miraflores: { minLat: -12.1380, maxLat: -12.1080, minLng: -77.0420, maxLng: -77.0180 },
-  "San Isidro": { minLat: -12.1080, maxLat: -12.0880, minLng: -77.0480, maxLng: -77.0180 },
-  "Santiago de Surco": { minLat: -12.1650, maxLat: -12.0850, minLng: -77.0200, maxLng: -76.9450 },
-  Barranco: { minLat: -12.1580, maxLat: -12.1380, minLng: -77.0280, maxLng: -77.0120 },
-  "San Miguel": { minLat: -12.0950, maxLat: -12.0650, minLng: -77.0950, maxLng: -77.0680 },
-  "Jesús María": { minLat: -12.0920, maxLat: -12.0680, minLng: -77.0580, maxLng: -77.0380 },
-  "Magdalena del Mar": { minLat: -12.0980, maxLat: -12.0820, minLng: -77.0750, maxLng: -77.0620 },
-  Lince: { minLat: -12.0910, maxLat: -12.0780, minLng: -77.0420, maxLng: -77.0250 },
-  "San Borja": { minLat: -12.1180, maxLat: -12.0820, minLng: -77.0150, maxLng: -76.9800 },
-  Surquillo: { minLat: -12.1240, maxLat: -12.1050, minLng: -77.0250, maxLng: -77.0000 },
-  Ate: { minLat: -12.0800, maxLat: -12.0100, minLng: -76.9850, maxLng: -76.8500 },
-  "Pueblo Libre": { minLat: -12.0880, maxLat: -12.0650, minLng: -77.0720, maxLng: -77.0500 },
-  Chorrillos: { minLat: -12.2150, maxLat: -12.1500, minLng: -77.0400, maxLng: -76.9800 },
-  "La Molina": { minLat: -12.1200, maxLat: -12.0600, minLng: -76.9600, maxLng: -76.8900 },
-  Callao: { minLat: -12.0800, maxLat: -11.9800, minLng: -77.1600, maxLng: -77.0800 },
+  Miraflores: { minLat: -12.1450, maxLat: -12.1000, minLng: -77.0600, maxLng: -76.9950 },
+  "San Isidro": { minLat: -12.1160, maxLat: -12.0800, minLng: -77.0650, maxLng: -77.0020 },
+  "Santiago de Surco": { minLat: -12.1800, maxLat: -12.0700, minLng: -77.0230, maxLng: -76.9400 },
+  Barranco: { minLat: -12.1620, maxLat: -12.1260, minLng: -77.0340, maxLng: -77.0080 },
+  "San Miguel": { minLat: -12.1030, maxLat: -12.0550, minLng: -77.1180, maxLng: -77.0660 },
+  "Jesús María": { minLat: -12.0980, maxLat: -12.0600, minLng: -77.0680, maxLng: -77.0310 },
+  "Magdalena del Mar": { minLat: -12.1120, maxLat: -12.0790, minLng: -77.0840, maxLng: -77.0500 },
+  Lince: { minLat: -12.0960, maxLat: -12.0740, minLng: -77.0530, maxLng: -77.0180 },
+  "San Borja": { minLat: -12.1170, maxLat: -12.0750, minLng: -77.0170, maxLng: -76.9730 },
+  Surquillo: { minLat: -12.1310, maxLat: -12.0970, minLng: -77.0320, maxLng: -76.9890 },
+  Ate: { minLat: -12.0900, maxLat: -11.9870, minLng: -77.0030, maxLng: -76.7780 },
+  "Pueblo Libre": { minLat: -12.0910, maxLat: -12.0620, minLng: -77.0860, maxLng: -77.0450 },
+  Chorrillos: { minLat: -12.2360, maxLat: -12.1490, minLng: -77.0450, maxLng: -76.9670 },
+  "La Molina": { minLat: -12.1290, maxLat: -12.0510, minLng: -76.9810, maxLng: -76.8790 },
+  Callao: { minLat: -12.0850, maxLat: -11.8120, minLng: -77.1930, maxLng: -77.0710 },
 };
 
 // Verificación de línea costera: la Costa Verde y el Malecón de San Miguel
@@ -31,7 +31,7 @@ function isCoordinateInPacificOcean(lat, lng) {
   if (lat < -12.155 && lng < -77.030) return true;
   if (lat >= -12.155 && lat < -12.125 && lng < -77.042) return true;
   if (lat >= -12.125 && lat < -12.095 && lng < -77.075) return true;
-  if (lat >= -12.095 && lat < -12.070 && lng < -77.093) return true;
+  if (lat >= -12.095 && lat < -12.070 && lng < -77.094) return true;
   if (lat >= -12.070 && lng < -77.150) return true;
   return false;
 }

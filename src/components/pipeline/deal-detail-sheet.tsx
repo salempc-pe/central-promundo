@@ -70,8 +70,20 @@ export function DealDetailSheet({
   const [activeTab, setActiveTab] = useState("finanzas");
   const [tipoNota, setTipoNota] = useState<TipoEventoBitacora>("Nota");
   const [nuevaDescripcion, setNuevaDescripcion] = useState("");
-  const [selectedBrokerId, setSelectedBrokerId] = useState(brokers[0]?.id || "usr-01");
+  const [selectedBrokerId, setSelectedBrokerId] = useState(
+    deal?.brokerId || brokers[0]?.id || ""
+  );
   const [isAddingNota, setIsAddingNota] = useState(false);
+
+  const dealBrokerId = deal?.brokerId;
+  const dealId = deal?.id;
+  const prevDealIdRef = React.useRef<string | undefined>(undefined);
+  React.useEffect(() => {
+    if (dealId && dealId !== prevDealIdRef.current) {
+      setSelectedBrokerId(dealBrokerId || brokers[0]?.id || "");
+      prevDealIdRef.current = dealId;
+    }
+  }, [dealId, dealBrokerId, brokers]);
 
   if (!deal) return null;
 
@@ -379,20 +391,20 @@ export function DealDetailSheet({
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
                   <User className="w-4 h-4 text-slate-700" />
                   <span className="font-bold text-slate-900 text-sm">
-                    Broker Responsable: {deal.broker.nombre}
+                    Broker Responsable: {deal.broker?.nombre || "Broker Promundo"}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-2xs font-mono">
                   <div>
                     <span className="text-slate-400">Rol:</span>
                     <div className="font-semibold text-slate-800 uppercase">
-                      {deal.broker.rol.replace("_", " ")}
+                      {deal.broker?.rol ? deal.broker.rol.replace("_", " ") : "Broker"}
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400">Email Corporativo:</span>
                     <div className="font-semibold text-slate-800">
-                      {deal.broker.email}
+                      {deal.broker?.email || "-"}
                     </div>
                   </div>
                 </div>

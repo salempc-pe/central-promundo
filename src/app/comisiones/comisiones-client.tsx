@@ -10,12 +10,11 @@ import {
   UpdateLiquidacionInput,
 } from "@/types/comisiones";
 import {
-  getComisionesLiquidaciones,
-  getComisionesKpis,
-  cambiarEstadoLiquidacion,
-  subscribeComisiones,
-} from "@/lib/services/comisiones";
-import { mockUsuarios } from "@/lib/mock/negociaciones-seed";
+  getComisionesAction,
+  getComisionesKpisAction,
+  updateEstadoComisionAction,
+} from "@/lib/actions/comisiones-actions";
+import { getBrokersAction } from "@/lib/actions/pipeline-actions";
 import { exportarComisionesAExcel } from "@/lib/export-comisiones";
 import { ComisionesKpiBanner } from "@/components/comisiones/comisiones-kpi-banner";
 import { ComisionesToolbar } from "@/components/comisiones/comisiones-toolbar";
@@ -24,13 +23,33 @@ import { ComisionDetailSheet } from "@/components/comisiones/comision-detail-she
 import { EstadoLiquidacionDialog } from "@/components/comisiones/estado-liquidacion-dialog";
 import { ComisionVoucherModal } from "@/components/comisiones/comision-voucher-modal";
 import { DollarSign, ShieldCheck } from "lucide-react";
+import { Usuario } from "@/types";
 
-export function ComisionesClient() {
+interface ComisionesClientProps {
+  initialComisiones?: ComisionLiquidacion[];
+  initialKpis?: ComisionesKpis | null;
+  initialBrokers?: Usuario[];
+}
+
+export function ComisionesClient({
+  initialComisiones = [],
+  initialKpis = null,
+  initialBrokers = [],
+}: ComisionesClientProps = {}) {
   const searchParams = useSearchParams();
-  const [liquidaciones, setLiquidaciones] = useState<ComisionLiquidacion[]>([]);
-  const [kpis, setKpis] = useState<ComisionesKpis | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [liquidaciones, setLiquidaciones] = useState<ComisionLiquidacion[]>(initialComisiones);
+  const [kpis, setKpis] = useState<ComisionesKpis | null>(initialKpis);
+  const [brokers, setBrokers] = useState<Usuario[]>(initialBrokers);
+  const [loading, setLoading] = useState(false);
   const [filtros, setFiltros] = useState<ComisionFiltros>({});
+
+  useEffect(() => {
+    if (!initialBrokers || initialBrokers.length === 0) {
+      getBrokersAction().then((b) => {
+        if (b && b.length > 0) setBrokers(b);
+      });
+    }
+  }, [initialBrokers]);
 
   useEffect(() => {
     const q =
@@ -66,27 +85,26 @@ export function ComisionesClient() {
     useState<ComisionLiquidacion | null>(null);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
 
-  // Catálogos para la toolbar
+  // Catálogos para la toolbar con datos reales de la BD
   const brokersDisponibles = useMemo(() => {
-    return mockUsuarios.map((u) => ({ id: u.id, nombre: u.nombre }));
-  }, []);
+    return brokers.map((u) => ({ id: u.id, nombre: u.nombre }));
+  }, [brokers]);
 
   const distritosDisponibles = useMemo(() => {
-    const dists = new Set(liquidaciones.map((l) => l.terreno.distrito));
-    return Array.from(dists).sort();
+    const dists = new Set(liquidaciones.map((l) => l.terreno?.distrito).filter(Boolean));
+    return Array.from(dists).sort() as string[];
   }, [liquidaciones]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [lista, metricas] = await Promise.all([
-        getComisionesLiquidaciones(filtros),
-        getComisionesKpis(filtros),
+        getComisionesAction(filtros),
+        getComisionesKpisAction(),
       ]);
       setLiquidaciones(lista);
       setKpis(metricas);
 
-      // Si hay una liquidación abierta en el Sheet, mantenerla actualizada
       if (selectedLiquidacion) {
         const refrescada = lista.find((item) => item.id === selectedLiquidacion.id);
         if (refrescada) setSelectedLiquidacion(refrescada);
@@ -99,12 +117,10 @@ export function ComisionesClient() {
   }, [filtros, selectedLiquidacion]);
 
   useEffect(() => {
-    loadData();
-    const unsubscribe = subscribeComisiones(() => {
+    if (Object.keys(filtros).length > 0) {
       loadData();
-    });
-    return () => unsubscribe();
-  }, [loadData]);
+    }
+  }, [filtros, loadData]);
 
   // Handlers
   const handleVerDetalle = (item: ComisionLiquidacion) => {
@@ -123,7 +139,8 @@ export function ComisionesClient() {
 
   const handleConfirmEstadoChange = async (input: UpdateLiquidacionInput) => {
     try {
-      await cambiarEstadoLiquidacion(input);
+      const dbEstado = input.nuevoEstado === "Liquidado" ? "Cobrado" : (input.nuevoEstado as "Pendiente" | "Facturado" | "Cobrado");
+      await updateEstadoComisionAction(input.id, dbEstado);
       await loadData();
     } catch (err) {
       console.error("Error en transición de estado:", err);
@@ -141,7 +158,7 @@ export function ComisionesClient() {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50/70 overflow-hidden select-none p-3 space-y-2.5">
-      {/* Encabezado del Módulo con Acentos Institucionales */}
+      {/* Encabezado del Módulo */}
       <div className="flex items-center justify-between bg-white border border-slate-200 rounded px-3.5 py-2 shadow-xs shrink-0">
         <div className="flex items-center space-x-2.5">
           <div className="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white shadow-xs">
@@ -153,7 +170,7 @@ export function ComisionesClient() {
                 Comisiones, Liquidaciones y Reportes Financieros
               </h1>
               <span className="text-3xs font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                Módulo F
+                Módulo F (PostgreSQL)
               </span>
             </div>
             <p className="text-3xs text-slate-500 font-mono">
@@ -182,7 +199,7 @@ export function ComisionesClient() {
         filtros={filtros}
         onFiltrosChange={setFiltros}
         onExportarExcel={handleExportarExcel}
-        totalRegistros={kpis ? kpis.totalCierres : liquidaciones.length}
+        totalRegistros={liquidaciones.length}
         registrosFiltrados={liquidaciones.length}
         brokersDisponibles={brokersDisponibles}
         distritosDisponibles={distritosDisponibles}

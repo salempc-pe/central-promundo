@@ -50,12 +50,15 @@ export function DealCard({
     deal.etapa !== "Cierre_Ganado" &&
     deal.etapa !== "Descartado";
 
-  const brokerInitials = deal.broker.nombre
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const brokerNombre = deal.broker?.nombre || "Broker Asignado";
+  const brokerInitials =
+    brokerNombre
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "BA";
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData("text/plain", deal.id);
@@ -109,8 +112,8 @@ export function DealCard({
 
           {/* Broker Initials Badge */}
           <div
-            className="w-5 h-5 rounded-full bg-slate-800 text-white font-mono text-3xs font-bold flex items-center justify-center shrink-0 border border-slate-700"
-            title={`Broker: ${deal.broker.nombre}`}
+            className="w-5 h-5 rounded-full bg-slate-100 text-slate-800 font-mono text-3xs font-bold flex items-center justify-center shrink-0 border border-slate-300"
+            title={`Broker: ${brokerNombre}`}
           >
             {brokerInitials}
           </div>

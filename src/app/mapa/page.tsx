@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import { getTerrenos } from "@/lib/services/terrenos";
+import { getClientesAction } from "@/lib/actions/pipeline-actions";
 import { MapaClient } from "./mapa-client";
 
 export const metadata = {
@@ -7,8 +8,13 @@ export const metadata = {
   description: "Visor cartográfico interactivo georreferenciado con PostGIS para análisis de lotes de inversión en Lima Metropolitana.",
 };
 
+export const revalidate = 0;
+
 export default async function MapaPage() {
-  const initialTerrenos = await getTerrenos();
+  const [initialTerrenos, initialClientes] = await Promise.all([
+    getTerrenos(),
+    getClientesAction(),
+  ]);
 
   return (
     <Suspense
@@ -18,7 +24,7 @@ export default async function MapaPage() {
         </div>
       }
     >
-      <MapaClient initialTerrenos={initialTerrenos} />
+      <MapaClient initialTerrenos={initialTerrenos} initialClientes={initialClientes} />
     </Suspense>
   );
 }

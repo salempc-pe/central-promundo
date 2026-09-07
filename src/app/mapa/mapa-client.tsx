@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { TerrenoCompleto, TerrenoFiltros } from "@/types";
+import { TerrenoCompleto, TerrenoFiltros, Cliente } from "@/types";
 import { TerrenosFilters } from "@/components/terrenos/terrenos-filters";
 import { ActiveFilterChips } from "@/components/terrenos/active-filter-chips";
 import { TerrenoDetailSheet } from "@/components/terrenos/terreno-detail-sheet";
@@ -13,11 +13,12 @@ import { cn } from "@/lib/utils";
 
 interface MapaClientProps {
   initialTerrenos: TerrenoCompleto[];
+  initialClientes?: Cliente[];
 }
 
-export function MapaClient({ initialTerrenos }: MapaClientProps) {
+export function MapaClient({ initialTerrenos, initialClientes = [] }: MapaClientProps) {
   const searchParams = useSearchParams();
-  const [terrenosList] = useState<TerrenoCompleto[]>(initialTerrenos);
+  const [terrenosList, setTerrenosList] = useState<TerrenoCompleto[]>(initialTerrenos);
   const [filtros, setFiltros] = useState<TerrenoFiltros>({});
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const [isSplitView, setIsSplitView] = useState(true);
@@ -25,6 +26,10 @@ export function MapaClient({ initialTerrenos }: MapaClientProps) {
   const [hoveredTerrenoId, setHoveredTerrenoId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailTab, setDetailTab] = useState("ficha");
+
+  useEffect(() => {
+    setTerrenosList(initialTerrenos);
+  }, [initialTerrenos]);
 
   // Sincronizar desde searchParams al navegar desde otros módulos
   useEffect(() => {
@@ -275,6 +280,18 @@ export function MapaClient({ initialTerrenos }: MapaClientProps) {
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         defaultTab={detailTab}
+        clientes={initialClientes}
+        onTerrenoUpdated={(updated) => {
+          setTerrenosList((prev) =>
+            prev.map((t) => (t.id === updated.id ? updated : t))
+          );
+          setSelectedTerreno(updated);
+        }}
+        onTerrenoDeleted={(deletedId) => {
+          setTerrenosList((prev) => prev.filter((t) => t.id !== deletedId));
+          setSelectedTerreno(null);
+          setIsDetailOpen(false);
+        }}
       />
     </div>
   );

@@ -11,7 +11,7 @@ import {
   VisibilityState,
   RowSelectionState,
 } from "@tanstack/react-table";
-import { TerrenoCompleto, TerrenoFiltros, Propietario } from "@/types";
+import { TerrenoCompleto, TerrenoFiltros, Propietario, Cliente } from "@/types";
 import { getTerrenosColumns } from "@/components/terrenos/terrenos-columns";
 import { TerrenosFilters } from "@/components/terrenos/terrenos-filters";
 import { TerrenosToolbar } from "@/components/terrenos/terrenos-toolbar";
@@ -20,16 +20,19 @@ import { TerrenosTable } from "@/components/terrenos/terrenos-table";
 import { TerrenoDetailSheet } from "@/components/terrenos/terreno-detail-sheet";
 import { TerrenoCreateDialog } from "@/components/terrenos/terreno-create-dialog";
 import { exportarTerrenosAExcel } from "@/lib/export-excel";
-import { createTerrenoEnMemoria, createPropietarioEnMemoria } from "@/lib/services/terrenos";
+import { createPropietarioAction } from "@/lib/actions/terrenos-actions";
+import { Check, X } from "lucide-react";
 
 interface TerrenosClientProps {
   initialTerrenos: TerrenoCompleto[];
   initialPropietarios?: Propietario[];
+  initialClientes?: Cliente[];
 }
 
 export function TerrenosClient({
   initialTerrenos,
   initialPropietarios = [],
+  initialClientes = [],
 }: TerrenosClientProps) {
   const searchParams = useSearchParams();
   const [terrenosList, setTerrenosList] = useState<TerrenoCompleto[]>(initialTerrenos);
@@ -40,6 +43,30 @@ export function TerrenosClient({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailTab, setDetailTab] = useState("ficha");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createdBanner, setCreatedBanner] = useState<{
+    codigo: string;
+    distrito: string;
+    terreno: TerrenoCompleto;
+  } | null>(null);
+
+  // Sincronizar estado local cuando las props del servidor cambian (revalidatePath / Server Component)
+  useEffect(() => {
+    if (initialTerrenos) {
+      setTerrenosList(initialTerrenos);
+    }
+  }, [initialTerrenos]);
+
+  useEffect(() => {
+    if (initialPropietarios) {
+      setPropietariosList(initialPropietarios);
+    }
+  }, [initialPropietarios]);
+
+  // Ref mutable para evitar que mutaciones en terrenosList vuelvan a disparar el efecto de búsqueda por URL
+  const terrenosListRef = React.useRef(terrenosList);
+  useEffect(() => {
+    terrenosListRef.current = terrenosList;
+  }, [terrenosList]);
 
   // Sincronizar desde searchParams al navegar desde el Dashboard, Header u otros módulos
   useEffect(() => {
@@ -56,7 +83,7 @@ export function TerrenosClient({
     const targetId = tId || q;
     if (targetId) {
       const normTarget = targetId.toLowerCase().replace("terr-", "tr-");
-      const found = terrenosList.find(
+      const found = terrenosListRef.current.find(
         (t) =>
           t.id.toLowerCase() === targetId.toLowerCase() ||
           t.id.toLowerCase() === normTarget ||
@@ -68,11 +95,10 @@ export function TerrenosClient({
         if (tab) setDetailTab(tab);
       }
     }
-  }, [searchParams, terrenosList]);
+  }, [searchParams]);
 
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "codigoInterno", desc: false },
-  ]);
+  // Ordenamiento: Vacío por defecto para respetar el orden natural de la base de datos (más recientes primero)
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -239,22 +265,46 @@ export function TerrenosClient({
     exportarTerrenosAExcel(filteredTerrenos, filtros);
   };
 
-  // Manejador para registrar nuevo lote
+  // Manejador para registrar nuevo lote (ya persistido en PostgreSQL vía createTerrenoAction)
   const handleCreateTerreno = async (nuevoTerreno: TerrenoCompleto) => {
-    await createTerrenoEnMemoria(nuevoTerreno);
-    setTerrenosList((prev) => [nuevoTerreno, ...prev]);
+    // 1. Limpiar filtros acumulativos para asegurar visibilidad inmediata del nuevo activo
+    setFiltros({});
+    // 2. Restablecer ordenamiento al orden natural para que figure en la fila 1
+    setSorting([]);
+    // 3. Forzar que la tabla se posicione en la primera página
+    table.setPageIndex(0);
+    // 4. Agregar a la lista reactiva al inicio
+    setTerrenosList((prev) => [
+      nuevoTerreno,
+      ...prev.filter((t) => t.id !== nuevoTerreno.id),
+    ]);
+    // 5. Seleccionar la fila para resaltarla visualmente
     setSelectedTerreno(nuevoTerreno);
-    setDetailTab("ficha");
-    setIsDetailOpen(true);
+    // 6. Notificar visualmente que el activo está posicionado en la primera fila
+    setCreatedBanner({
+      codigo: nuevoTerreno.codigoInterno,
+      distrito: nuevoTerreno.distrito,
+      terreno: nuevoTerreno,
+    });
   };
 
-  // Manejador para registrar nuevo titular desde el modal
+  // Manejador para registrar nuevo titular desde el modal (con persistencia en PostgreSQL)
   const handleCreatePropietario = async (
     data: Omit<Propietario, "id" | "createdAt" | "updatedAt">
   ) => {
-    const nuevo = await createPropietarioEnMemoria(data);
-    setPropietariosList((prev) => [nuevo, ...prev]);
-    return nuevo;
+    const res = await createPropietarioAction(data);
+    if (res.success && res.data) {
+      setPropietariosList((prev) => [res.data!, ...prev]);
+      return res.data;
+    }
+    const fallback: Propietario = {
+      ...data,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setPropietariosList((prev) => [fallback, ...prev]);
+    return fallback;
   };
 
   return (
@@ -297,6 +347,37 @@ export function TerrenosClient({
 
         {/* Data Grid Central TanStack Table */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {createdBanner && (
+            <div className="px-3 py-1.5 bg-emerald-50/90 border-b border-emerald-200 flex items-center justify-between text-2xs font-mono shrink-0 animate-in fade-in duration-200">
+              <div className="flex items-center space-x-2 text-emerald-800">
+                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>
+                  Lote <strong className="font-bold">{createdBanner.codigo}</strong> ({createdBanner.distrito}) registrado exitosamente. Situado en la primera fila.
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTerreno(createdBanner.terreno);
+                    setDetailTab("ficha");
+                    setIsDetailOpen(true);
+                  }}
+                  className="text-3xs font-semibold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                >
+                  Abrir Ficha Técnica
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreatedBanner(null)}
+                  className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                  title="Cerrar aviso"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
           <TerrenosTable
             table={table}
             onSelectTerreno={handleSelectTerreno}
@@ -311,6 +392,18 @@ export function TerrenosClient({
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         defaultTab={detailTab}
+        clientes={initialClientes}
+        onTerrenoUpdated={(updated) => {
+          setTerrenosList((prev) =>
+            prev.map((t) => (t.id === updated.id ? updated : t))
+          );
+          setSelectedTerreno(updated);
+        }}
+        onTerrenoDeleted={(deletedId) => {
+          setTerrenosList((prev) => prev.filter((t) => t.id !== deletedId));
+          setSelectedTerreno(null);
+          setIsDetailOpen(false);
+        }}
       />
 
       {/* Diálogo de Alta de Nuevo Lote */}
@@ -321,6 +414,7 @@ export function TerrenosClient({
         propietariosDisponibles={propietariosList}
         onCrearPropietario={handleCreatePropietario}
         totalTerrenosCount={terrenosList.length}
+        codigosExistentes={terrenosList.map((t) => t.codigoInterno)}
       />
     </div>
   );

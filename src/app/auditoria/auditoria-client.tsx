@@ -9,10 +9,9 @@ import {
   ModuloSistema,
 } from "@/types/auditoria";
 import {
-  getEventosAuditoria,
-  getAuditoriaKpis,
-  subscribeAuditoria,
-} from "@/lib/services/auditoria";
+  getEventosAuditoriaAction,
+  getAuditoriaKpisAction,
+} from "@/lib/actions/auditoria-actions";
 import { exportarAuditoriaACSV } from "@/lib/export-auditoria";
 import { AuditoriaKpiBanner } from "@/components/auditoria/auditoria-kpi-banner";
 import { AuditoriaToolbar } from "@/components/auditoria/auditoria-toolbar";
@@ -20,15 +19,23 @@ import { AuditoriaTable } from "@/components/auditoria/auditoria-table";
 import { AuditoriaDiffSheet } from "@/components/auditoria/auditoria-diff-sheet";
 import { ShieldAlert, CheckCircle2, Lock } from "lucide-react";
 
-export function AuditoriaClient() {
+interface AuditoriaClientProps {
+  initialEventos?: EventoAuditoriaGlobal[];
+  initialKpis?: AuditoriaKpis | null;
+}
+
+export function AuditoriaClient({
+  initialEventos = [],
+  initialKpis = null,
+}: AuditoriaClientProps) {
   const searchParams = useSearchParams();
   const [filtros, setFiltros] = useState<AuditoriaFiltros>({});
-  const [eventos, setEventos] = useState<EventoAuditoriaGlobal[]>([]);
-  const [kpis, setKpis] = useState<AuditoriaKpis | null>(null);
+  const [eventos, setEventos] = useState<EventoAuditoriaGlobal[]>(initialEventos);
+  const [kpis, setKpis] = useState<AuditoriaKpis | null>(initialKpis);
   const [selectedEvento, setSelectedEvento] =
     useState<EventoAuditoriaGlobal | null>(null);
   const [isDiffOpen, setIsDiffOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const q =
@@ -49,8 +56,8 @@ export function AuditoriaClient() {
     setLoading(true);
     try {
       const [eventosData, kpisData] = await Promise.all([
-        getEventosAuditoria(filtros),
-        getAuditoriaKpis(),
+        getEventosAuditoriaAction(filtros),
+        getAuditoriaKpisAction(),
       ]);
       setEventos(eventosData);
       setKpis(kpisData);
@@ -63,14 +70,6 @@ export function AuditoriaClient() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
-
-  // Suscripción reactiva en tiempo real a nuevos logs
-  useEffect(() => {
-    const unsubscribe = subscribeAuditoria(() => {
-      loadData();
-    });
-    return () => unsubscribe();
   }, [loadData]);
 
   const handleSelectEvento = (evento: EventoAuditoriaGlobal) => {

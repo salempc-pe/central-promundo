@@ -5,10 +5,7 @@ import {
   AuditoriaKpis,
   DiffCampoAudit,
 } from "@/types/auditoria";
-import { mockAuditoriaEventosSeed } from "@/lib/mock/auditoria-seed";
-
-// Almacén reactivo en memoria
-let memoryAuditoria: EventoAuditoriaGlobal[] = [...mockAuditoriaEventosSeed];
+let memoryAuditoria: EventoAuditoriaGlobal[] = [];
 type AuditoriaListener = (eventos: EventoAuditoriaGlobal[]) => void;
 const listeners = new Set<AuditoriaListener>();
 

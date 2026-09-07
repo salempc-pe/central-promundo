@@ -41,6 +41,8 @@ import {
   X,
   Compass,
 } from "lucide-react";
+import { TerrenoLocationPicker } from "./terreno-location-picker";
+import { createTerrenoAction } from "@/lib/actions/terrenos-actions";
 
 interface TerrenoCreateDialogProps {
   isOpen: boolean;
@@ -49,6 +51,7 @@ interface TerrenoCreateDialogProps {
   propietariosDisponibles: Propietario[];
   onCrearPropietario?: (p: Omit<Propietario, "id" | "createdAt" | "updatedAt">) => Promise<Propietario>;
   totalTerrenosCount: number;
+  codigosExistentes?: string[];
 }
 
 const DISTRITOS_LIMA = [
@@ -125,7 +128,10 @@ export function TerrenoCreateDialog({
   propietariosDisponibles,
   onCrearPropietario,
   totalTerrenosCount,
+  codigosExistentes = [],
 }: TerrenoCreateDialogProps) {
+  const formRef = React.useRef<HTMLFormElement>(null);
+
   // Form values
   const [distrito, setDistrito] = useState<string>("Miraflores");
   const [codigoInterno, setCodigoInterno] = useState<string>("");
@@ -170,15 +176,45 @@ export function TerrenoCreateDialog({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Generar código interno predeterminado
+  // Generar código interno predeterminado garantizando unicidad contra la cartera
   const generarCodigoSugerido = React.useCallback(
     (dist: string) => {
       const prefix = getDistrictCodePrefix(dist);
-      const seq = String(totalTerrenosCount + 1).padStart(3, "0");
-      return `TR-${prefix}-${seq}`;
+      const existingUpper = new Set(
+        (codigosExistentes || []).map((c) => c.toUpperCase())
+      );
+      let seq = totalTerrenosCount + 1;
+      let candidate = `TR-${prefix}-${String(seq).padStart(3, "0")}`;
+      while (existingUpper.has(candidate)) {
+        seq++;
+        candidate = `TR-${prefix}-${String(seq).padStart(3, "0")}`;
+      }
+      return candidate;
     },
-    [totalTerrenosCount]
+    [totalTerrenosCount, codigosExistentes]
   );
+
+  // Restablecer formulario
+  const resetForm = React.useCallback(() => {
+    setDistrito("Miraflores");
+    setCodigoCustom(false);
+    setDireccion("");
+    setReferencia("");
+    setAreaM2("850");
+    setPrecioTotal("2550000");
+    setPrecioM2("3000");
+    setZonificacion("RDA");
+    setFrenteLinealM("20.5");
+    setFondoPromedioM("41.46");
+    setAlturaMaxPisos("10");
+    setCoeficienteEdificacion("4.5");
+    setAreaLibreMinPct("35");
+    setUsosPermitidos(["Residencial Multifamiliar", "Comercio Zonal"]);
+    setMoneda("USD");
+    setEstadoTerreno("Disponible");
+    setShowNuevoPropietario(false);
+    setError(null);
+  }, []);
 
   // Inicializar código y propietario al abrir
   useEffect(() => {
@@ -334,57 +370,58 @@ export function TerrenoCreateDialog({
     const validacionGeo = validateTerrenoCoordinates(distrito, latNum, lngNum);
     if (!validacionGeo.valid) {
       setError(`Alerta de Georreferenciación: ${validacionGeo.error}`);
+      setTimeout(() => {
+        formRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      }, 50);
       return;
     }
 
-    const propObj = propietariosDisponibles.find((p) => p.id === propietarioId) || {
-      id: propietarioId,
-      razonSocialONombre: "Titular Registrado",
-      tipoDoc: "RUC",
-      numeroDoc: "20000000000",
-      telefono: null,
-      email: null,
-      contactoRepresentante: null,
-      notasInternas: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const nuevoTerreno: TerrenoCompleto = {
-      id: `tr-${Date.now().toString(36)}`,
-      codigoInterno: codigoInterno.trim().toUpperCase(),
-      propietarioId: propObj.id,
-      direccion: direccion.trim(),
-      distrito,
-      referencia: referencia.trim() || null,
-      latitud: latNum.toFixed(7),
-      longitud: lngNum.toFixed(7),
-      geom: { lat: latNum, lng: lngNum },
-      areaM2: areaNum.toFixed(2),
-      frenteLinealM: frenteLinealM ? parseFloat(frenteLinealM).toFixed(2) : null,
-      fondoPromedioM: fondoPromedioM ? parseFloat(fondoPromedioM).toFixed(2) : null,
-      zonificacion,
-      alturaMaxPisos: alturaMaxPisos ? parseInt(alturaMaxPisos, 10) : null,
-      coeficienteEdificacion: coeficienteEdificacion || null,
-      areaLibreMinPct: areaLibreMinPct || null,
-      usosPermitidos,
-      precioTotal: totalNum.toFixed(2),
-      precioM2: parseFloat(precioM2).toFixed(2),
-      moneda,
-      estadoTerreno,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      propietario: propObj,
-      documentos: [],
-      negociaciones: [],
-    };
-
     setSubmitting(true);
     try {
-      await onSubmit(nuevoTerreno);
+      const res = await createTerrenoAction({
+        codigoInterno: codigoInterno.trim().toUpperCase(),
+        propietarioId,
+        nuevoPropietario: showNuevoPropietario
+          ? {
+              razonSocialONombre: nuevoPropNombre.trim(),
+              tipoDoc: nuevoPropTipoDoc,
+              numeroDoc: nuevoPropNumDoc.trim() || undefined,
+              telefono: nuevoPropTelefono.trim() || undefined,
+              email: nuevoPropEmail.trim() || undefined,
+              contactoRepresentante: nuevoPropRepresentante.trim() || undefined,
+            }
+          : undefined,
+        direccion: direccion.trim(),
+        distrito,
+        referencia: referencia.trim() || null,
+        latitud: latNum,
+        longitud: lngNum,
+        areaM2: areaNum,
+        frenteLinealM: frenteLinealM ? parseFloat(frenteLinealM) : null,
+        fondoPromedioM: fondoPromedioM ? parseFloat(fondoPromedioM) : null,
+        zonificacion,
+        alturaMaxPisos: alturaMaxPisos ? parseInt(alturaMaxPisos, 10) : null,
+        coeficienteEdificacion: coeficienteEdificacion || null,
+        areaLibreMinPct: areaLibreMinPct || null,
+        usosPermitidos,
+        precioTotal: totalNum,
+        precioM2: parseFloat(precioM2),
+        moneda,
+        estadoTerreno,
+      });
+
+      if (!res.success || !res.data) {
+        throw new Error(res.error || "Error al persistir el terreno en la base de datos.");
+      }
+
+      await onSubmit(res.data);
+      resetForm();
       onClose();
     } catch (err: any) {
       setError(err.message || "Error al registrar el lote en el sistema");
+      setTimeout(() => {
+        formRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      }, 50);
     } finally {
       setSubmitting(false);
     }
@@ -428,7 +465,7 @@ export function TerrenoCreateDialog({
         </DialogHeader>
 
         {/* Formulario Principal */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs font-mono">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs font-mono">
           {error && (
             <div className="p-2.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-2xs flex items-start space-x-2">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -626,66 +663,68 @@ export function TerrenoCreateDialog({
             )}
           </div>
 
-          {/* Fila 3: Dirección & Georreferenciación WGS84 */}
-          <div className="p-3 bg-white rounded border border-slate-200 space-y-2">
-            <label className="text-3xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-blue-600" />
-              Dirección Física y Coordenadas WGS84 (Lima Metropolitana)
-            </label>
+          {/* Fila 3: Dirección Física & Selector Cartográfico Interactivo */}
+          <div className="p-3 bg-white rounded border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-3xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                Dirección Física y Localización en Mapa ({distrito})
+              </label>
+              <Badge variant="outline" className="text-3xs font-mono font-normal border-slate-200 text-slate-500">
+                WGS84 • PostGIS
+              </Badge>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
+                <label className="block text-3xs text-slate-500 font-bold uppercase mb-0.5">
+                  Dirección Oficial del Lote *
+                </label>
                 <Input
                   value={direccion}
                   onChange={(e) => setDireccion(e.target.value)}
-                  placeholder="Ej: Av. Balboa 640 o Jr. Salaverry 410 *"
-                  className="h-8 text-xs bg-white border-slate-300"
+                  placeholder="Ej: Av. Vasco Núñez de Balboa 640"
+                  className="h-8 text-xs bg-white border-slate-300 font-sans"
                   required
                 />
               </div>
               <div>
+                <label className="block text-3xs text-slate-500 font-bold uppercase mb-0.5">
+                  Referencia Urbana (Opcional)
+                </label>
                 <Input
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
-                  placeholder="Referencia: Esquina con Av. Principal, frente a parque..."
-                  className="h-8 text-xs bg-white border-slate-300"
+                  placeholder="Ej: A 2 cuadras del Malecón, frente a parque..."
+                  className="h-8 text-xs bg-white border-slate-300 font-sans"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <div className="flex items-center space-x-1.5">
-                <span className="text-3xs font-bold text-slate-500 uppercase w-12">Latitud:</span>
-                <Input
-                  value={latitud}
-                  onChange={(e) => setLatitud(e.target.value)}
-                  className="h-7 text-xs font-mono bg-slate-50 border-slate-300"
-                  placeholder="-12.1230000"
-                />
+            {/* Ventana de Mapa Interactivo con Buscador de Dirección Superior */}
+            <div className="pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-3xs font-bold text-slate-600 uppercase tracking-wider">
+                  Verificación de Ubicación en Mapa Cartográfico
+                </span>
+                <span className="text-3xs text-slate-400 font-mono">
+                  {latitud && longitud ? `[${parseFloat(latitud).toFixed(5)}, ${parseFloat(longitud).toFixed(5)}]` : ""}
+                </span>
               </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="text-3xs font-bold text-slate-500 uppercase w-14">Longitud:</span>
-                <Input
-                  value={longitud}
-                  onChange={(e) => setLongitud(e.target.value)}
-                  className="h-7 text-xs font-mono bg-slate-50 border-slate-300"
-                  placeholder="-77.0300000"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const centroid = getCentroidForDistrict(distrito);
-                    setLatitud(centroid.lat.toString());
-                    setLongitud(centroid.lng.toString());
-                  }}
-                  title="Calcular centroide del distrito"
-                  className="h-7 text-3xs font-mono text-slate-600 px-2 shrink-0 border-slate-300"
-                >
-                  <Compass className="w-3 h-3 mr-1" />
-                  Centroide
-                </Button>
-              </div>
+              <TerrenoLocationPicker
+                distrito={distrito}
+                latitud={parseFloat(latitud) || getCentroidForDistrict(distrito).lat}
+                longitud={parseFloat(longitud) || getCentroidForDistrict(distrito).lng}
+                onChangeCoordinates={(newLat, newLng) => {
+                  setLatitud(newLat.toString());
+                  setLongitud(newLng.toString());
+                }}
+                onSelectAddressSuggestion={(sug) => {
+                  if (!direccion.trim()) {
+                    setDireccion(sug);
+                  }
+                }}
+              />
             </div>
           </div>
 

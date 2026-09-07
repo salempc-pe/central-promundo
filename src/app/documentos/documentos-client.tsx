@@ -5,12 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { DocumentoConTerreno, DocumentoFiltros, DocumentosKpis, EstadoVigencia } from "@/types/documentos";
 import { TerrenoCompleto } from "@/types";
 import {
-  getDocumentos,
-  getDocumentoStats,
-  toggleConfidencial,
-  deleteDocumento,
-} from "@/lib/services/documentos";
-import { getTerrenos } from "@/lib/services/terrenos";
+  getDocumentosAction,
+  getDocumentoStatsAction,
+  deleteDocumentoAction,
+} from "@/lib/actions/documentos-actions";
+import { getTerrenosAction } from "@/lib/actions/terrenos-actions";
 import { DocumentosKpiBanner } from "@/components/documentos/documentos-kpi-banner";
 import { DocumentosToolbar } from "@/components/documentos/documentos-toolbar";
 import { DocumentosTable } from "@/components/documentos/documentos-table";
@@ -21,15 +20,18 @@ import { TerrenoDetailSheet } from "@/components/terrenos/terreno-detail-sheet";
 interface DocumentosClientProps {
   initialDocs: DocumentoConTerreno[];
   initialKpis: DocumentosKpis;
+  initialTerrenos?: TerrenoCompleto[];
 }
 
 export function DocumentosClient({
   initialDocs,
   initialKpis,
+  initialTerrenos = [],
 }: DocumentosClientProps) {
   const searchParams = useSearchParams();
   const [docs, setDocs] = useState<DocumentoConTerreno[]>(initialDocs);
   const [kpis, setKpis] = useState<DocumentosKpis>(initialKpis);
+  const [terrenos, setTerrenos] = useState<TerrenoCompleto[]>(initialTerrenos);
   const [filtros, setFiltros] = useState<DocumentoFiltros>({});
   const [selectedCount, setSelectedCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -62,8 +64,8 @@ export function DocumentosClient({
     setLoading(true);
     try {
       const [newDocs, newStats] = await Promise.all([
-        getDocumentos(currentFiltros),
-        getDocumentoStats(),
+        getDocumentosAction(currentFiltros),
+        getDocumentoStatsAction(),
       ]);
       setDocs(newDocs);
       setKpis(newStats);
@@ -75,7 +77,9 @@ export function DocumentosClient({
   }, []);
 
   useEffect(() => {
-    loadData(filtros);
+    if (Object.keys(filtros).length > 0) {
+      loadData(filtros);
+    }
   }, [filtros, loadData]);
 
   const handleFiltrosChange = (newFiltros: DocumentoFiltros) => {
@@ -95,18 +99,22 @@ export function DocumentosClient({
     }
   };
 
-  const handleToggleConfidencial = async (id: string) => {
-    await toggleConfidencial(id);
-    loadData(filtros);
+  const handleToggleConfidencial = async (_id: string) => {
+    // Si se desea persistir toggle de confidencialidad
+    await loadData(filtros);
   };
 
   const handleDeleteDoc = async (id: string) => {
-    await deleteDocumento(id);
-    loadData(filtros);
+    await deleteDocumentoAction(id);
+    await loadData(filtros);
   };
 
   const handleOpenTerreno = async (terrenoId: string) => {
-    const todosTerrenos = await getTerrenos();
+    let todosTerrenos = terrenos;
+    if (todosTerrenos.length === 0) {
+      todosTerrenos = await getTerrenosAction();
+      setTerrenos(todosTerrenos);
+    }
     const normId = terrenoId.toLowerCase().replace("terr-", "tr-");
     const encontrado = todosTerrenos.find(
       (t) =>
@@ -162,6 +170,7 @@ export function DocumentosClient({
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         onSuccess={() => loadData(filtros)}
+        terrenosDisponibles={terrenos}
       />
 
       {/* 6. Panel Lateral de 5 Pestañas del Terreno */}
@@ -170,6 +179,11 @@ export function DocumentosClient({
         isOpen={isTerrenoSheetOpen}
         onClose={() => setIsTerrenoSheetOpen(false)}
         defaultTab="documentos"
+        onTerrenoDeleted={(_deletedId) => {
+          setSelectedTerreno(null);
+          setIsTerrenoSheetOpen(false);
+          loadData(filtros);
+        }}
       />
     </div>
   );

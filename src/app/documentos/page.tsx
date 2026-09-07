@@ -1,5 +1,9 @@
 import React, { Suspense } from "react";
-import { getDocumentos, getDocumentoStats } from "@/lib/services/documentos";
+import {
+  getDocumentosAction,
+  getDocumentoStatsAction,
+} from "@/lib/actions/documentos-actions";
+import { getTerrenosAction } from "@/lib/actions/terrenos-actions";
 import { DocumentosClient } from "./documentos-client";
 
 export const metadata = {
@@ -7,10 +11,13 @@ export const metadata = {
   description: "Custodia técnica, legal y semáforo de vigencia de certificados de parámetros urbanísticos.",
 };
 
+export const revalidate = 0;
+
 export default async function DocumentosPage() {
-  const [initialDocs, initialKpis] = await Promise.all([
-    getDocumentos(),
-    getDocumentoStats(),
+  const [initialDocs, initialKpis, terrenos] = await Promise.all([
+    getDocumentosAction(),
+    getDocumentoStatsAction(),
+    getTerrenosAction(),
   ]);
 
   return (
@@ -21,7 +28,11 @@ export default async function DocumentosPage() {
         </div>
       }
     >
-      <DocumentosClient initialDocs={initialDocs} initialKpis={initialKpis} />
+      <DocumentosClient
+        initialDocs={initialDocs}
+        initialKpis={initialKpis}
+        initialTerrenos={terrenos}
+      />
     </Suspense>
   );
 }

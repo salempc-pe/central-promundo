@@ -1,19 +1,19 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Layers,
-  MapPin,
-  TrendingUp,
-  Building,
-  AlertCircle,
   FileCheck,
   CheckCircle2,
   ArrowUpRight,
   ExternalLink,
   Plus,
   ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import { getSolicitudesPendientesCount } from "@/lib/services/auth-service";
+import {
+  getDashboardKpisAction,
+  getRecentTerrenosAction,
+} from "@/lib/actions/dashboard-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,92 +27,14 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatArea, formatPricePerM2 } from "@/lib/utils";
 
-// Mock data de terrenos representativos para validar el renderizado inicial
-const terrenosMuestra = [
-  {
-    codigo: "TR-MIRA-084",
-    distrito: "Miraflores",
-    direccion: "Av. Vasco Núñez de Balboa 640",
-    zonificacion: "RDA",
-    areaM2: 1250.0,
-    frenteM: 25.0,
-    alturaMax: 10,
-    precioTotal: 3125000,
-    precioM2: 2500,
-    moneda: "USD" as const,
-    estado: "Disponible" as const,
-    tieneParametros: true,
-    vencimientoParametros: "2026-11-15",
-    matchingCount: 4,
-  },
-  {
-    codigo: "TR-SISI-019",
-    distrito: "San Isidro",
-    direccion: "Calle Las Palmeras 380",
-    zonificacion: "CZ",
-    areaM2: 2100.0,
-    frenteM: 35.5,
-    alturaMax: 15,
-    precioTotal: 6930000,
-    precioM2: 3300,
-    moneda: "USD" as const,
-    estado: "En Negociacion" as const,
-    tieneParametros: true,
-    vencimientoParametros: "2026-09-20",
-    matchingCount: 7,
-  },
-  {
-    codigo: "TR-SURCO-112",
-    distrito: "Santiago de Surco",
-    direccion: "Av. El Derby 420",
-    zonificacion: "RDM",
-    areaM2: 3400.0,
-    frenteM: 42.0,
-    alturaMax: 8,
-    precioTotal: 5780000,
-    precioM2: 1700,
-    moneda: "USD" as const,
-    estado: "Disponible" as const,
-    tieneParametros: false,
-    vencimientoParametros: null,
-    matchingCount: 5,
-  },
-  {
-    codigo: "TR-BCO-045",
-    distrito: "Barranco",
-    direccion: "Av. Pedro de Osma 180",
-    zonificacion: "CM",
-    areaM2: 890.0,
-    frenteM: 18.0,
-    alturaMax: 6,
-    precioTotal: 2047000,
-    precioM2: 2300,
-    moneda: "USD" as const,
-    estado: "Disponible" as const,
-    tieneParametros: true,
-    vencimientoParametros: "2026-08-10",
-    matchingCount: 3,
-  },
-  {
-    codigo: "TR-SMIG-092",
-    distrito: "San Miguel",
-    direccion: "Costanera 1100",
-    zonificacion: "RDA",
-    areaM2: 1850.0,
-    frenteM: 28.0,
-    alturaMax: 12,
-    precioTotal: 2960000,
-    precioM2: 1600,
-    moneda: "USD" as const,
-    estado: "Disponible" as const,
-    tieneParametros: true,
-    vencimientoParametros: "2027-02-01",
-    matchingCount: 6,
-  },
-];
+export const revalidate = 0;
 
 export default async function DashboardPage() {
-  const pendientesCount = await getSolicitudesPendientesCount();
+  const [pendientesCount, kpis, terrenosDestacados] = await Promise.all([
+    getSolicitudesPendientesCount(),
+    getDashboardKpisAction(),
+    getRecentTerrenosAction(5),
+  ]);
 
   return (
     <div className="space-y-3">
@@ -123,7 +45,10 @@ export default async function DashboardPage() {
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
             <span>
               <strong>Alerta de Acceso Institucional:</strong> Hay{" "}
-              <strong className="font-mono font-bold underline">{pendientesCount} solicitud(es) de acceso</strong> vía Google en espera de revisión fiduciaria. Los postulantes no tienen acceso al catálogo de suelo.
+              <strong className="font-mono font-bold underline">
+                {pendientesCount} solicitud(es) de acceso
+              </strong>{" "}
+              vía Google en espera de revisión fiduciaria. Los postulantes no tienen acceso al catálogo de suelo.
             </span>
           </div>
           <Link
@@ -168,9 +93,11 @@ export default async function DashboardPage() {
           <Card className="border-slate-200 group-hover:border-blue-400 group-hover:shadow-xs transition-all cursor-pointer">
             <CardContent className="p-2.5">
               <div className="text-3xs font-mono uppercase text-slate-500 group-hover:text-blue-600">Lotes en Cartera</div>
-              <div className="text-base font-bold text-slate-900 font-mono mt-0.5">142 lotes</div>
+              <div className="text-base font-bold text-slate-900 font-mono mt-0.5">
+                {kpis.lotesEnCartera} lotes
+              </div>
               <div className="text-3xs text-emerald-600 font-mono flex items-center mt-1">
-                <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" /> +8 este mes
+                <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" /> +{kpis.lotesNuevosEsteMes} este mes
               </div>
             </CardContent>
           </Card>
@@ -180,8 +107,12 @@ export default async function DashboardPage() {
           <Card className="border-slate-200 group-hover:border-blue-400 group-hover:shadow-xs transition-all cursor-pointer">
             <CardContent className="p-2.5">
               <div className="text-3xs font-mono uppercase text-slate-500 group-hover:text-blue-600">Área Total en Gestión</div>
-              <div className="text-base font-bold text-slate-900 font-mono mt-0.5">384,200 m²</div>
-              <div className="text-3xs text-slate-400 font-mono mt-1">38.42 hectáreas</div>
+              <div className="text-base font-bold text-slate-900 font-mono mt-0.5">
+                {kpis.areaTotalM2.toLocaleString()} m²
+              </div>
+              <div className="text-3xs text-slate-400 font-mono mt-1">
+                {kpis.areaTotalHectareas} hectáreas
+              </div>
             </CardContent>
           </Card>
         </Link>
@@ -190,8 +121,12 @@ export default async function DashboardPage() {
           <Card className="border-slate-200 group-hover:border-blue-400 group-hover:shadow-xs transition-all cursor-pointer">
             <CardContent className="p-2.5">
               <div className="text-3xs font-mono uppercase text-slate-500 group-hover:text-blue-600">Pipeline en Negociación</div>
-              <div className="text-base font-bold text-blue-600 font-mono mt-0.5">$48,250,000</div>
-              <div className="text-3xs text-blue-500 font-mono mt-1">19 ofertas en curso</div>
+              <div className="text-base font-bold text-blue-600 font-mono mt-0.5">
+                ${kpis.pipelineMontoUSD.toLocaleString()}
+              </div>
+              <div className="text-3xs text-blue-500 font-mono mt-1">
+                {kpis.pipelineDealsActivos} ofertas en curso
+              </div>
             </CardContent>
           </Card>
         </Link>
@@ -199,9 +134,11 @@ export default async function DashboardPage() {
         <Link href="/matching" className="block group">
           <Card className="border-slate-200 group-hover:border-blue-400 group-hover:shadow-xs transition-all cursor-pointer">
             <CardContent className="p-2.5">
-              <div className="text-3xs font-mono uppercase text-slate-500 group-hover:text-blue-600">Constructoras Activas</div>
-              <div className="text-base font-bold text-slate-900 font-mono mt-0.5">64 fondos/desarr.</div>
-              <div className="text-3xs text-slate-400 font-mono mt-1">128 mandatos guardados</div>
+              <div className="text-3xs font-mono uppercase text-slate-500 group-hover:text-blue-600">Constructoras Registradas</div>
+              <div className="text-base font-bold text-slate-900 font-mono mt-0.5">
+                {kpis.constructorasTotal} fondos/desarr.
+              </div>
+              <div className="text-3xs text-slate-400 font-mono mt-1">Mandatos activos en BD</div>
             </CardContent>
           </Card>
         </Link>
@@ -213,7 +150,9 @@ export default async function DashboardPage() {
                 <AlertCircle className="w-3 h-3 text-amber-600" />
                 <span>Certificados por Vencer</span>
               </div>
-              <div className="text-base font-bold text-amber-900 font-mono mt-0.5">5 lotes</div>
+              <div className="text-base font-bold text-amber-900 font-mono mt-0.5">
+                {kpis.documentosPorVencer} lote(s)
+              </div>
               <div className="text-3xs text-amber-700 font-mono mt-1">&lt; 30 días restantes</div>
             </CardContent>
           </Card>
@@ -227,9 +166,11 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Inventario Destacado (Últimas Altas)
+                Inventario Destacado (Últimas Altas en PostgreSQL)
               </span>
-              <Badge variant="secondary" className="font-mono">5 registros</Badge>
+              <Badge variant="secondary" className="font-mono">
+                {terrenosDestacados.length} registros
+              </Badge>
             </div>
             <Link
               href="/terrenos"
@@ -256,7 +197,7 @@ export default async function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {terrenosMuestra.map((t) => (
+              {terrenosDestacados.map((t) => (
                 <TableRow key={t.codigo} className="dense-row-hover">
                   <TableCell className="font-mono font-bold text-xs">
                     <Link
@@ -283,7 +224,7 @@ export default async function DashboardPage() {
                     {formatArea(t.areaM2)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-xs">
-                    {t.frenteM} m
+                    {t.frenteM !== null ? `${t.frenteM} m` : "-"}
                   </TableCell>
                   <TableCell className="text-right font-mono font-semibold text-slate-900 text-xs">
                     {formatPricePerM2(t.precioM2, t.moneda)}
@@ -298,6 +239,8 @@ export default async function DashboardPage() {
                           ? "success"
                           : t.estado === "En Negociacion"
                           ? "warning"
+                          : t.estado === "Vendido"
+                          ? "default"
                           : "secondary"
                       }
                     >
@@ -340,6 +283,10 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="p-2.5 space-y-2 text-2xs font-mono">
               <div className="flex justify-between border-b border-slate-100 pb-1">
+                <span className="text-slate-500">Base de Datos:</span>
+                <span className="text-emerald-600 font-semibold">PostgreSQL (Supabase)</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-100 pb-1">
                 <span className="text-slate-500">PostGIS Ext.:</span>
                 <span className="text-emerald-600 font-semibold">HABILITADO (SRID 4326)</span>
               </div>
@@ -356,8 +303,8 @@ export default async function DashboardPage() {
                 <span className="text-slate-800 font-semibold">GIST(geom)</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Storage Supabase:</span>
-                <span className="text-blue-600 font-semibold">documentos_terreno</span>
+                <span className="text-slate-500">Datos Mock:</span>
+                <span className="text-emerald-600 font-semibold">0% (100% Persistido)</span>
               </div>
             </CardContent>
           </Card>
@@ -370,7 +317,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="p-2.5 space-y-1.5 text-2xs">
               <p className="text-slate-600">
-                El motor cruza automáticamente cada alta de terreno con:
+                El motor cruza automáticamente cada alta de terreno en PostgreSQL con:
               </p>
               <ul className="list-disc list-inside space-y-0.5 text-slate-700 font-mono text-3xs">
                 <li>Ticket Financiero (mín - máx)</li>

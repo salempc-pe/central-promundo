@@ -62,7 +62,7 @@ export function PipelineTableView({
         comparison = a.cliente.razonSocial.localeCompare(b.cliente.razonSocial);
         break;
       case "broker":
-        comparison = a.broker.nombre.localeCompare(b.broker.nombre);
+        comparison = (a.broker?.nombre || "").localeCompare(b.broker?.nombre || "");
         break;
       case "etapa":
         comparison = a.etapa.localeCompare(b.etapa);
@@ -211,7 +211,7 @@ export function PipelineTableView({
                     {deal.cliente.razonSocial}
                   </td>
                   <td className="py-1.5 px-2.5 font-mono text-2xs text-slate-700 truncate max-w-[120px]">
-                    {deal.broker.nombre}
+                    {deal.broker?.nombre || "Sin Asignar"}
                   </td>
                   <td className="py-1.5 px-2.5">
                     <StageBadge etapa={deal.etapa} />

@@ -4,12 +4,12 @@ import {
   GisInfraestructuraStatus,
   CapaCartograficaInfo,
 } from "@/types/configuracion";
-import { mockParametrosUrbanisticosSeed } from "@/lib/mock/parametros-normativos-seed";
+import { parametrosUrbanisticosNormativos } from "@/lib/constants/parametros-normativos";
 import { registrarEventoAuditoria } from "@/lib/services/auditoria";
 
-// Almacén en memoria de Parámetros Urbanísticos
+// Catálogo de Parámetros Urbanísticos Normativos
 let memoryParametros: ParametroUrbanisticoDistrital[] = [
-  ...mockParametrosUrbanisticosSeed,
+  ...parametrosUrbanisticosNormativos,
 ];
 
 // Configuración global del Motor de Matching (Default balanceado institucional)

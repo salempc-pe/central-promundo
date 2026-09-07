@@ -9,6 +9,7 @@ import {
   MatchEvaluationResult,
   TerrenoCompleto,
   Cliente,
+  Usuario,
 } from "@/types";
 import {
   evaluarMatch,
@@ -16,7 +17,6 @@ import {
   matchTerrenoContraClientes,
   matchClienteContraTerrenos,
 } from "@/lib/services/matching";
-import { mockTerrenosCompletos, mockClientesCompradores } from "@/lib/mock/terrenos-seed";
 import { MatchingKpisBanner } from "@/components/matching/matching-kpis";
 import { MatchingToolbar } from "@/components/matching/matching-toolbar";
 import { MatchByTerrenoView } from "@/components/matching/match-by-terreno";
@@ -25,7 +25,17 @@ import { MatchingMatrixView } from "@/components/matching/matching-matrix";
 import { MatchDetailDrawer } from "@/components/matching/match-detail-drawer";
 import { QuickDealDialog } from "@/components/matching/quick-deal-dialog";
 
-export function MatchingClient() {
+interface MatchingClientProps {
+  initialTerrenos?: TerrenoCompleto[];
+  initialClientes?: Cliente[];
+  initialBrokers?: Usuario[];
+}
+
+export function MatchingClient({
+  initialTerrenos = [],
+  initialClientes = [],
+  initialBrokers = [],
+}: MatchingClientProps = {}) {
   const searchParams = useSearchParams();
 
   // Estados de vista y ponderación
@@ -34,16 +44,17 @@ export function MatchingClient() {
   const [busqueda, setBusqueda] = useState<string>("");
   const [scoreMinimo, setScoreMinimo] = useState<number>(0);
 
-  // Datos base
-  const [terrenos] = useState<TerrenoCompleto[]>(mockTerrenosCompletos);
-  const [clientes] = useState<Cliente[]>(mockClientesCompradores);
+  // Datos base reales de PostgreSQL
+  const [terrenos] = useState<TerrenoCompleto[]>(initialTerrenos);
+  const [clientes] = useState<Cliente[]>(initialClientes);
+  const [brokers] = useState<Usuario[]>(initialBrokers);
 
   // Selección actual
-  const [terrenoSeleccionado, setTerrenoSeleccionado] = useState<TerrenoCompleto>(
-    terrenos[0]
+  const [terrenoSeleccionado, setTerrenoSeleccionado] = useState<TerrenoCompleto | null>(
+    terrenos[0] || null
   );
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente>(
-    clientes[0]
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(
+    clientes[0] || null
   );
 
   // Modales
@@ -60,7 +71,7 @@ export function MatchingClient() {
       searchParams.get("id") ||
       searchParams.get("q") ||
       searchParams.get("codigo");
-    if (tId) {
+    if (tId && terrenos.length > 0) {
       const normTarget = tId.toLowerCase().replace("terr-", "tr-");
       const foundT = terrenos.find(
         (t) =>
@@ -75,8 +86,8 @@ export function MatchingClient() {
     }
 
     const cId = searchParams.get("clienteId");
-    if (cId) {
-      const foundC = clientes.find((c) => c.id === cId);
+    if (cId && clientes.length > 0) {
+      const foundC = clientes.find((c) => c.id.toLowerCase() === cId.toLowerCase());
       if (foundC) {
         setClienteSeleccionado(foundC);
         setViewMode("cliente");
@@ -84,69 +95,53 @@ export function MatchingClient() {
     }
 
     const v = searchParams.get("view");
-    if (v === "terreno" || v === "cliente" || v === "matriz") {
-      setViewMode(v as MatchingViewMode);
+    if (v === "matriz" || v === "terreno" || v === "cliente") {
+      setViewMode(v);
     }
   }, [searchParams, terrenos, clientes]);
 
-  // Cálculo de la Matriz Completa y KPIs Globales
+  // Cálculo de la Matriz Global Completa
   const matrixData = useMemo(() => {
     return calcularMatrizCompleta(terrenos, clientes, weights);
   }, [terrenos, clientes, weights]);
 
-  // Resultados calculados para la vista Por Terreno
+  // Cruces según vista activa
   const matchesPorTerreno = useMemo(() => {
-    let pool = clientes.map((c) => evaluarMatch(terrenoSeleccionado, c, weights));
-
-    if (busqueda.trim()) {
+    if (!terrenoSeleccionado) return [];
+    let list = clientes.map((cli) => evaluarMatch(terrenoSeleccionado, cli, weights));
+    if (scoreMinimo > 0) {
+      list = list.filter((m) => m.scoreMatch >= scoreMinimo);
+    }
+    if (busqueda && busqueda.trim()) {
       const q = busqueda.toLowerCase().trim();
-      pool = pool.filter(
+      list = list.filter(
         (m) =>
           m.cliente.razonSocial.toLowerCase().includes(q) ||
-          m.cliente.tipoCliente.toLowerCase().includes(q) ||
           (m.cliente.contactoNombre && m.cliente.contactoNombre.toLowerCase().includes(q))
       );
     }
+    return list.sort((a, b) => b.scoreMatch - a.scoreMatch);
+  }, [terrenoSeleccionado, clientes, weights, scoreMinimo, busqueda]);
 
-    if (scoreMinimo > 0) {
-      pool = pool.filter((m) => m.scoreMatch >= scoreMinimo);
-    }
-
-    return pool.sort((a, b) => b.scoreMatch - a.scoreMatch);
-  }, [terrenoSeleccionado, clientes, weights, busqueda, scoreMinimo]);
-
-  // Resultados calculados para la vista Por Constructora
   const matchesPorCliente = useMemo(() => {
-    let pool = terrenos.map((t) => evaluarMatch(t, clienteSeleccionado, weights));
-
-    if (busqueda.trim()) {
+    if (!clienteSeleccionado) return [];
+    let list = terrenos.map((t) => evaluarMatch(t, clienteSeleccionado, weights));
+    if (scoreMinimo > 0) {
+      list = list.filter((m) => m.scoreMatch >= scoreMinimo);
+    }
+    if (busqueda && busqueda.trim()) {
       const q = busqueda.toLowerCase().trim();
-      const normQ = q.replace("terr-", "tr-");
-      pool = pool.filter(
+      list = list.filter(
         (m) =>
-          m.terreno.id.toLowerCase().includes(q) ||
-          m.terreno.id.toLowerCase().includes(normQ) ||
           m.terreno.codigoInterno.toLowerCase().includes(q) ||
-          m.terreno.distrito.toLowerCase().includes(q) ||
           m.terreno.direccion.toLowerCase().includes(q) ||
-          m.terreno.zonificacion.toLowerCase().includes(q)
+          m.terreno.distrito.toLowerCase().includes(q)
       );
     }
+    return list.sort((a, b) => b.scoreMatch - a.scoreMatch);
+  }, [clienteSeleccionado, terrenos, weights, scoreMinimo, busqueda]);
 
-    if (scoreMinimo > 0) {
-      pool = pool.filter((m) => m.scoreMatch >= scoreMinimo);
-    }
-
-    return pool.sort((a, b) => b.scoreMatch - a.scoreMatch);
-  }, [clienteSeleccionado, terrenos, weights, busqueda, scoreMinimo]);
-
-  // Resultados para exportar según la vista activa
-  const resultadosActuales = useMemo(() => {
-    if (viewMode === "terreno") return matchesPorTerreno;
-    if (viewMode === "cliente") return matchesPorCliente;
-    return matchesPorTerreno;
-  }, [viewMode, matchesPorTerreno, matchesPorCliente]);
-
+  // Handlers para abrir el Drawer y Quick Deal
   const handleOpenDetail = (match: MatchEvaluationResult) => {
     setDetailMatch(match);
     setIsDetailOpen(true);
@@ -158,25 +153,31 @@ export function MatchingClient() {
   };
 
   return (
-    <div className="space-y-3 pb-8 font-sans">
-      {/* 1. Banner Superior de KPIs Financieros y de Afinidad */}
+    <div className="flex-1 flex flex-col h-full bg-slate-50/70 p-3 space-y-3 overflow-hidden">
+      {/* 1. Banner Superior de KPIs del Cruce */}
       <MatchingKpisBanner kpis={matrixData.kpis} />
 
-      {/* 2. Barra de Herramientas y Controles */}
+      {/* 2. Barra de Control de Pistas, Filtros y Pesos */}
       <MatchingToolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
+        weights={weights}
+        onWeightsChange={setWeights}
         busqueda={busqueda}
         onBusquedaChange={setBusqueda}
         scoreMinimo={scoreMinimo}
         onScoreMinimoChange={setScoreMinimo}
-        weights={weights}
-        onWeightsChange={setWeights}
-        resultadosActuales={resultadosActuales}
+        resultadosActuales={
+          viewMode === "terreno"
+            ? matchesPorTerreno
+            : viewMode === "cliente"
+            ? matchesPorCliente
+            : []
+        }
       />
 
-      {/* 3. Vistas Operativas según Modo */}
-      {viewMode === "terreno" && (
+      {/* 3. Vistas Principales Condicionales */}
+      {viewMode === "terreno" && terrenoSeleccionado && (
         <MatchByTerrenoView
           terrenos={terrenos}
           terrenoSeleccionado={terrenoSeleccionado}
@@ -187,7 +188,7 @@ export function MatchingClient() {
         />
       )}
 
-      {viewMode === "cliente" && (
+      {viewMode === "cliente" && clienteSeleccionado && (
         <MatchByClienteView
           clientes={clientes}
           clienteSeleccionado={clienteSeleccionado}
@@ -214,11 +215,12 @@ export function MatchingClient() {
         onStartDeal={handleStartDeal}
       />
 
-      {/* Modal de Conversión Rápida a Negociación Comercial (Módulo D) */}
+      {/* Modal de Conversión Rápida a Negociación Comercial (Módulo D) con brokers reales */}
       <QuickDealDialog
         match={quickDealMatch}
         open={isQuickDealOpen}
         onOpenChange={setIsQuickDealOpen}
+        brokers={brokers}
       />
     </div>
   );

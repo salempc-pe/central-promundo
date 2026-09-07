@@ -135,7 +135,7 @@ export function EtapaChangeDialog({
         notaBitacora: notaBitacora.trim(),
         montoOferta: montoNum,
         probabilidadCierre: Number(probabilidad),
-        usuarioId: usuarioId || brokers[0]?.id || "usr-01",
+        usuarioId: usuarioId || brokers[0]?.id || "",
       });
       onClose();
     } catch (err: any) {
@@ -271,12 +271,25 @@ export function EtapaChangeDialog({
             </label>
             <Select value={usuarioId} onValueChange={setUsuarioId}>
               <SelectTrigger className="h-8 text-xs font-mono bg-white border-slate-300">
-                <SelectValue />
+                <SelectValue placeholder="Seleccionar broker responsable..." />
               </SelectTrigger>
-              <SelectContent className="text-xs font-mono">
+              <SelectContent className="text-xs font-mono max-h-56">
                 {brokers.map((b) => (
                   <SelectItem key={b.id} value={b.id}>
-                    {b.nombre} ({b.rol})
+                    <div className="flex items-center justify-between gap-3 w-full pr-2">
+                      <span className="font-semibold text-slate-900">{b.nombre}</span>
+                      <span
+                        className={`text-3xs px-1.5 py-0.5 rounded font-sans uppercase tracking-wider border ${
+                          b.rol === "admin"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : b.rol === "broker_senior"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-slate-100 text-slate-700 border-slate-200"
+                        }`}
+                      >
+                        {b.rol.replace("_", " ")}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

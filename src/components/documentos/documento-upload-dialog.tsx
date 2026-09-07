@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TipoDocumento, UploadDocumentoInput } from "@/types/documentos";
-import { mockTerrenosCompletos } from "@/lib/mock/terrenos-seed";
-import { createDocumento } from "@/lib/services/documentos";
+import { TerrenoCompleto } from "@/types";
+import { createDocumentoAction } from "@/lib/actions/documentos-actions";
+import { getTerrenosAction } from "@/lib/actions/terrenos-actions";
 import {
   UploadCloud,
   FileText,
@@ -26,6 +27,7 @@ interface DocumentoUploadDialogProps {
   onClose: () => void;
   onSuccess: () => void;
   defaultTerrenoId?: string;
+  terrenosDisponibles?: TerrenoCompleto[];
 }
 
 export function DocumentoUploadDialog({
@@ -33,9 +35,24 @@ export function DocumentoUploadDialog({
   onClose,
   onSuccess,
   defaultTerrenoId,
+  terrenosDisponibles = [],
 }: DocumentoUploadDialogProps) {
+  const [terrenosList, setTerrenosList] = useState<TerrenoCompleto[]>(terrenosDisponibles);
+
+  React.useEffect(() => {
+    if (terrenosDisponibles && terrenosDisponibles.length > 0) {
+      setTerrenosList(terrenosDisponibles);
+    } else {
+      getTerrenosAction().then((loaded) => {
+        if (loaded && loaded.length > 0) {
+          setTerrenosList(loaded);
+        }
+      });
+    }
+  }, [terrenosDisponibles]);
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [terrenoId, setTerrenoId] = useState<string>(defaultTerrenoId || mockTerrenosCompletos[0]?.id || "");
+  const [terrenoId, setTerrenoId] = useState<string>(defaultTerrenoId || terrenosList[0]?.id || "");
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento>("Certificado_Parametros");
   const [fechaEmision, setFechaEmision] = useState<string>(new Date().toISOString().split("T")[0]);
   const [fechaVencimiento, setFechaVencimiento] = useState<string>("");
@@ -55,8 +72,10 @@ export function DocumentoUploadDialog({
   React.useEffect(() => {
     if (defaultTerrenoId) {
       setTerrenoId(defaultTerrenoId);
+    } else if (!terrenoId && terrenosList.length > 0) {
+      setTerrenoId(terrenosList[0].id);
     }
-  }, [defaultTerrenoId]);
+  }, [defaultTerrenoId, terrenosList, terrenoId]);
 
   // Calculador rápido de vencimiento (+36 meses según Ley 29090)
   const handleApply36Meses = () => {
@@ -138,7 +157,10 @@ export function DocumentoUploadDialog({
         notas: notas || undefined,
       };
 
-      await createDocumento(input);
+      const res = await createDocumentoAction(input);
+      if (!res.success) {
+        throw new Error(res.error || "Error al registrar el documento.");
+      }
       setIsUploading(false);
       onSuccess();
       onClose();
@@ -230,7 +252,7 @@ export function DocumentoUploadDialog({
               disabled={Boolean(defaultTerrenoId)}
               className="w-full h-7 bg-white border border-slate-300 rounded-xs px-2 text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 disabled:opacity-60"
             >
-              {mockTerrenosCompletos.map((t) => (
+              {terrenosList.map((t) => (
                 <option key={t.id} value={t.id}>
                   [{t.codigoInterno}] {t.distrito} - {t.direccion.slice(0, 35)}...
                 </option>

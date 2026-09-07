@@ -2,16 +2,37 @@
 
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Lock, AlertCircle, Building2 } from "lucide-react";
+import { Lock, AlertCircle, Building2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { simularLoginAction } from "@/app/auth/actions";
+import { useRouter } from "next/navigation";
 
 interface LoginClientProps {
   errorMsg?: string | null;
 }
 
 export function LoginClient({ errorMsg }: LoginClientProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDirectLoading, setIsDirectLoading] = useState(false);
   const [error, setError] = useState<string | null>(errorMsg || null);
+
+  const handleDirectAdminLogin = async () => {
+    try {
+      setIsDirectLoading(true);
+      setError(null);
+      const res = await simularLoginAction("paulosalem8@gmail.com", "Paulo Salem");
+      if (res && res.redirect) {
+        window.location.href = res.redirect;
+      } else {
+        window.location.href = "/";
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error al iniciar sesión directa.";
+      setError(message);
+      setIsDirectLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -132,9 +153,18 @@ export function LoginClient({ errorMsg }: LoginClientProps) {
             Al registrarte por primera vez con tu cuenta de Google, tu solicitud entrará en estado{" "}
             <strong className="text-amber-700 font-bold font-mono">PENDIENTE</strong>. Por normas fiduciarias y confidencialidad comercial, un administrador deberá autorizar formalmente tu cuenta antes de acceder al inventario de suelo y parámetros urbanísticos.
           </p>
-          <div className="pt-1 border-t border-slate-200/80 flex items-center justify-between text-slate-500">
+          <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-slate-500">
             <span>Administrador Principal:</span>
-            <span className="font-mono font-semibold text-slate-800">paulosalem8@gmail.com</span>
+            <button
+              type="button"
+              onClick={handleDirectAdminLogin}
+              disabled={isDirectLoading}
+              className="font-mono font-semibold text-blue-700 hover:text-blue-900 hover:underline flex items-center gap-1 text-3xs"
+              title="Ingresar directamente con credenciales de Superadministrador"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>{isDirectLoading ? "Ingresando..." : "paulosalem8@gmail.com (Ingresar)"}</span>
+            </button>
           </div>
         </div>
       </div>

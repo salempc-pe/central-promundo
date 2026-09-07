@@ -9,10 +9,11 @@ const PUBLIC_PATHS = ["/login", "/espera", "/auth"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Omitir estáticos de Next.js, API pública de salud o assets multimedia
+  // 1. Omitir estáticos de Next.js, API pública de salud, geocodificación o assets multimedia
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/health") ||
+    pathname.startsWith("/api/geocode") ||
     pathname.includes(".") // favicon.ico, svgs, imágenes
   ) {
     return NextResponse.next();

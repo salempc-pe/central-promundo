@@ -1,6 +1,12 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { PipelineClient } from "./pipeline-client";
+import {
+  getBrokersAction,
+  getClientesAction,
+  getNegociacionesAction,
+} from "@/lib/actions/pipeline-actions";
+import { getTerrenosAction } from "@/lib/actions/terrenos-actions";
 
 export const metadata: Metadata = {
   title: "Pipeline de Negociaciones & Auditoría | Promundo Sistema",
@@ -8,7 +14,16 @@ export const metadata: Metadata = {
     "Gestión visual e interactiva del embudo de ventas de suelo urbano corporativo con auditoría inmutable de bitácora y métricas de comisión.",
 };
 
-export default function PipelinePage() {
+export const revalidate = 0;
+
+export default async function PipelinePage() {
+  const [brokers, terrenos, clientes, deals] = await Promise.all([
+    getBrokersAction(),
+    getTerrenosAction(),
+    getClientesAction(),
+    getNegociacionesAction(),
+  ]);
+
   return (
     <Suspense
       fallback={
@@ -17,7 +32,12 @@ export default function PipelinePage() {
         </div>
       }
     >
-      <PipelineClient />
+      <PipelineClient
+        initialBrokers={brokers}
+        initialTerrenos={terrenos}
+        initialClientes={clientes}
+        initialDeals={deals}
+      />
     </Suspense>
   );
 }

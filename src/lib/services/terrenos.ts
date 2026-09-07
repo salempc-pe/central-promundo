@@ -1,15 +1,17 @@
 import { TerrenoCompleto, TerrenoFiltros, ClientMatchResult, Propietario } from "@/types";
-import { mockTerrenosCompletos, mockPropietarios } from "@/lib/mock/terrenos-seed";
 import { calcularMatchingTerreno } from "./matching";
+import { getDb } from "@/db";
+import { terrenos, propietarios } from "@/db/schema";
+import { desc, eq, or } from "drizzle-orm";
 
-let memoryTerrenos: TerrenoCompleto[] = [...mockTerrenosCompletos];
-let memoryPropietarios: Propietario[] = [...mockPropietarios];
+let memoryTerrenos: TerrenoCompleto[] = [];
+let memoryPropietarios: Propietario[] = [];
 
 /**
- * Consulta y filtra el inventario de terrenos en memoria / DB
+ * Filtra el listado de terrenos según los criterios de búsqueda y filtros acumulativos
  */
-export async function getTerrenos(filtros?: TerrenoFiltros): Promise<TerrenoCompleto[]> {
-  let list = [...memoryTerrenos];
+function aplicarFiltros(lista: TerrenoCompleto[], filtros?: TerrenoFiltros): TerrenoCompleto[] {
+  let list = [...lista];
 
   if (!filtros) return list;
 
@@ -21,7 +23,7 @@ export async function getTerrenos(filtros?: TerrenoFiltros): Promise<TerrenoComp
         t.codigoInterno.toLowerCase().includes(q) ||
         t.distrito.toLowerCase().includes(q) ||
         t.direccion.toLowerCase().includes(q) ||
-        t.propietario.razonSocialONombre.toLowerCase().includes(q)
+        t.propietario?.razonSocialONombre?.toLowerCase().includes(q)
     );
   }
 
@@ -72,14 +74,87 @@ export async function getTerrenos(filtros?: TerrenoFiltros): Promise<TerrenoComp
   // 10. Certificado de Parámetros
   if (filtros.soloConCertificadoParametros) {
     list = list.filter((t) =>
-      t.documentos.some((d) => d.tipoDocumento === "Certificado_Parametros")
+      t.documentos?.some((d) => d.tipoDocumento === "Certificado_Parametros")
     );
   }
 
   return list;
 }
 
+/**
+ * Consulta y filtra el inventario de terrenos desde Supabase PostgreSQL con fallback a memoria
+ */
+export async function getTerrenos(filtros?: TerrenoFiltros): Promise<TerrenoCompleto[]> {
+  try {
+    const db = getDb();
+    const rows = await db.query.terrenos.findMany({
+      with: {
+        propietario: true,
+        documentos: true,
+        negociaciones: {
+          with: {
+            cliente: true,
+            broker: true,
+          },
+        },
+      },
+      orderBy: [desc(terrenos.createdAt)],
+    });
+
+    if (rows && rows.length > 0) {
+      const list = rows.map((r: any) => ({
+        ...r,
+        geom:
+          r.geom && typeof r.geom === "object" && r.geom.lat
+            ? r.geom
+            : { lat: parseFloat(r.latitud || "0"), lng: parseFloat(r.longitud || "0") },
+        documentos: r.documentos || [],
+        negociaciones: r.negociaciones || [],
+      })) as TerrenoCompleto[];
+
+      // Sincronizar memoria para respaldo
+      memoryTerrenos = list;
+      return aplicarFiltros(list, filtros);
+    }
+  } catch (error) {
+    console.warn("getTerrenos: Usando fallback en memoria por excepción en DB:", error);
+  }
+
+  return aplicarFiltros(memoryTerrenos, filtros);
+}
+
 export async function getTerrenoById(id: string): Promise<TerrenoCompleto | null> {
+  try {
+    const db = getDb();
+    const row = await db.query.terrenos.findFirst({
+      where: or(eq(terrenos.id, id), eq(terrenos.codigoInterno, id)),
+      with: {
+        propietario: true,
+        documentos: true,
+        negociaciones: {
+          with: {
+            cliente: true,
+            broker: true,
+          },
+        },
+      },
+    });
+
+    if (row) {
+      return {
+        ...row,
+        geom:
+          row.geom && typeof row.geom === "object" && (row.geom as any).lat
+            ? (row.geom as any)
+            : { lat: parseFloat(row.latitud || "0"), lng: parseFloat(row.longitud || "0") },
+        documentos: row.documentos || [],
+        negociaciones: (row.negociaciones as any) || [],
+      } as TerrenoCompleto;
+    }
+  } catch (error) {
+    console.warn("getTerrenoById: Usando fallback en memoria:", error);
+  }
+
   const found = memoryTerrenos.find((t) => t.id === id || t.codigoInterno === id);
   return found || null;
 }
@@ -105,6 +180,20 @@ export async function updateTerrenoEnMemoria(
 }
 
 export async function getPropietarios(): Promise<Propietario[]> {
+  try {
+    const db = getDb();
+    const rows = await db.query.propietarios.findMany({
+      orderBy: [desc(propietarios.createdAt)],
+    });
+
+    if (rows && rows.length > 0) {
+      memoryPropietarios = rows as Propietario[];
+      return rows as Propietario[];
+    }
+  } catch (error) {
+    console.warn("getPropietarios: Usando fallback en memoria:", error);
+  }
+
   return [...memoryPropietarios];
 }
 
@@ -138,3 +227,10 @@ export async function createTerrenoEnMemoria(
   memoryTerrenos.unshift(nuevo);
   return nuevo;
 }
+
+export async function deleteTerrenoEnMemoria(id: string): Promise<boolean> {
+  const initialLen = memoryTerrenos.length;
+  memoryTerrenos = memoryTerrenos.filter((t) => t.id !== id && t.codigoInterno !== id);
+  return memoryTerrenos.length < initialLen;
+}
+

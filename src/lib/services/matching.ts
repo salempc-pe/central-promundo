@@ -13,7 +13,6 @@ import {
   MatchingMatrixData,
   MatchingKpis,
 } from "@/types";
-import { mockClientesCompradores, mockTerrenosCompletos } from "@/lib/mock/terrenos-seed";
 
 // ============================================================================
 // CLÚSTERES INMOBILIARIOS DE LIMA METROPOLITANA
@@ -375,8 +374,8 @@ export async function matchTerrenoContraClientes(
   terrenoId: string,
   filtros?: MatchingFiltros,
   weights: MatchingWeights = DEFAULT_MATCHING_WEIGHTS,
-  catalogoTerrenos: TerrenoCompleto[] = mockTerrenosCompletos,
-  catalogoClientes: Cliente[] = mockClientesCompradores
+  catalogoTerrenos: TerrenoCompleto[] = [],
+  catalogoClientes: Cliente[] = []
 ): Promise<MatchEvaluationResult[]> {
   const terreno = catalogoTerrenos.find((t) => t.id === terrenoId);
   if (!terreno) return [];
@@ -416,8 +415,8 @@ export async function matchClienteContraTerrenos(
   clienteId: string,
   filtros?: MatchingFiltros,
   weights: MatchingWeights = DEFAULT_MATCHING_WEIGHTS,
-  catalogoTerrenos: TerrenoCompleto[] = mockTerrenosCompletos,
-  catalogoClientes: Cliente[] = mockClientesCompradores
+  catalogoTerrenos: TerrenoCompleto[] = [],
+  catalogoClientes: Cliente[] = []
 ): Promise<MatchEvaluationResult[]> {
   const cliente = catalogoClientes.find((c) => c.id === clienteId);
   if (!cliente) return [];
@@ -466,8 +465,8 @@ export async function matchClienteContraTerrenos(
 // ============================================================================
 
 export function calcularMatrizCompleta(
-  terrenos: TerrenoCompleto[] = mockTerrenosCompletos,
-  clientes: Cliente[] = mockClientesCompradores,
+  terrenos: TerrenoCompleto[] = [],
+  clientes: Cliente[] = [],
   weights: MatchingWeights = DEFAULT_MATCHING_WEIGHTS
 ): MatchingMatrixData {
   const matriz: Record<string, Record<string, MatchingMatrixCell>> = {};
@@ -544,7 +543,7 @@ export function calcularMatrizCompleta(
 
 export function calcularMatchingTerreno(
   terreno: TerrenoCompleto,
-  clientes: Cliente[] = mockClientesCompradores
+  clientes: Cliente[] = []
 ): ClientMatchResult[] {
   const evals = clientes.map((cli) => evaluarMatch(terreno, cli, DEFAULT_MATCHING_WEIGHTS));
 
