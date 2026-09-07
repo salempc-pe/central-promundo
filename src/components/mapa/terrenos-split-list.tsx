@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency, formatPricePerM2 } from "@/lib/utils";
+import { getZonificacionBadgeClass } from "@/lib/constants/zonificaciones";
 
 interface TerrenosSplitListProps {
   terrenos: TerrenoCompleto[];
@@ -229,13 +230,7 @@ export function TerrenosSplitList({
                   <span
                     className={cn(
                       "text-3xs font-mono font-bold px-1.5 py-0.2 rounded border",
-                      terreno.zonificacion === "RDA"
-                        ? "bg-purple-50 text-purple-700 border-purple-200"
-                        : terreno.zonificacion === "CZ"
-                        ? "bg-blue-50 text-blue-700 border-blue-200"
-                        : terreno.zonificacion === "CM"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+                      getZonificacionBadgeClass(terreno.zonificacion)
                     )}
                   >
                     {terreno.zonificacion}

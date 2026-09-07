@@ -14,6 +14,7 @@ import {
   MapPin,
   Filter,
 } from "lucide-react";
+import { getZonificacionBadgeClass } from "@/lib/constants/zonificaciones";
 
 interface ParametrosUrbanisticosTableProps {
   data: ParametroUrbanisticoDistrital[];
@@ -61,23 +62,7 @@ export function ParametrosUrbanisticosTable({
     setIsEditDialogOpen(true);
   };
 
-  const getZonifBadge = (zonif: string) => {
-    switch (zonif) {
-      case "RDA":
-        return "bg-blue-50 text-blue-700 border-blue-300 font-bold";
-      case "CZ":
-      case "CM":
-        return "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold";
-      case "RDM":
-      case "RDB":
-        return "bg-slate-100 text-slate-700 border-slate-300";
-      case "I1":
-      case "I2":
-        return "bg-amber-50 text-amber-700 border-amber-300 font-bold";
-      default:
-        return "bg-slate-100 text-slate-600 border-slate-200";
-    }
-  };
+  const getZonifBadge = (zonif: string) => getZonificacionBadgeClass(zonif);
 
   return (
     <div className="bg-white border border-slate-200 rounded shadow-xs p-3 space-y-3 select-none">

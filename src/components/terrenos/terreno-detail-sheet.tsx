@@ -30,6 +30,21 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ZONIFICACIONES_POR_CATEGORIA,
+  getZonificacionBadgeClass,
+  getZonificacionLabel,
+} from "@/lib/constants/zonificaciones";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,13 +63,6 @@ import { DocumentoUploadDialog } from "@/components/documentos/documento-upload-
 import { StageBadge } from "@/components/pipeline/stage-badge";
 import { Lock, Globe, Eye, Trash2, UploadCloud, GitPullRequest, Edit3, Check, Loader2 } from "lucide-react";
 import { NegociacionCompleta } from "@/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { updateTerrenoAction, deleteTerrenoAction } from "@/lib/actions/terrenos-actions";
 import {
@@ -351,11 +359,35 @@ export function TerrenoDetailSheet({
                         <label className="block text-3xs text-slate-600 font-mono mb-0.5">
                           Zonificación:
                         </label>
-                        <Input
-                          value={editZonificacion}
-                          onChange={(e) => setEditZonificacion(e.target.value)}
-                          className="h-7 text-xs font-mono bg-white border-slate-300"
-                        />
+                        <Select value={editZonificacion} onValueChange={setEditZonificacion}>
+                          <SelectTrigger className="h-7 text-xs font-mono font-bold bg-white border-slate-300">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-slate-200 max-h-64">
+                            {Object.entries(ZONIFICACIONES_POR_CATEGORIA).map(
+                              ([cat, items], idx) => (
+                                <SelectGroup key={cat}>
+                                  {idx > 0 && <SelectSeparator className="bg-slate-200 my-1" />}
+                                  <SelectLabel className="text-3xs font-mono font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2 py-1">
+                                    {cat}
+                                  </SelectLabel>
+                                  {items.map((z) => (
+                                    <SelectItem
+                                      key={z.value}
+                                      value={z.value}
+                                      className="text-xs font-mono py-1 cursor-pointer"
+                                    >
+                                      <span className="font-bold text-slate-900">{z.value}</span>
+                                      <span className="text-slate-500 ml-1.5 font-sans text-3xs">
+                                        — {z.nombre}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <label className="block text-3xs text-slate-600 font-mono mb-0.5">
@@ -390,8 +422,20 @@ export function TerrenoDetailSheet({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div className="p-2 bg-slate-50 border border-slate-200 rounded-xs">
                     <div className="text-3xs text-slate-500 font-mono">Zonificación</div>
-                    <div className="text-sm font-bold font-mono text-purple-700">
-                      {currentTerreno.zonificacion}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span
+                        className={`inline-block px-1.5 py-0.5 rounded text-xs font-mono font-bold border ${getZonificacionBadgeClass(
+                          currentTerreno.zonificacion
+                        )}`}
+                      >
+                        {currentTerreno.zonificacion}
+                      </span>
+                      <span
+                        className="text-3xs text-slate-500 truncate"
+                        title={getZonificacionLabel(currentTerreno.zonificacion)}
+                      >
+                        {getZonificacionLabel(currentTerreno.zonificacion).split(" - ")[1] || ""}
+                      </span>
                     </div>
                   </div>
                   <div className="p-2 bg-slate-50 border border-slate-200 rounded-xs">

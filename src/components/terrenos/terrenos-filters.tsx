@@ -15,6 +15,10 @@ import {
   FileCheck,
 } from "lucide-react";
 import { TerrenoFiltros } from "@/types";
+import {
+  ZONIFICACIONES_LIMA,
+  ZONIFICACIONES_PRIORITARIAS_FILTRO,
+} from "@/lib/constants/zonificaciones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,7 +52,7 @@ const DISTRITOS_LIMA = [
   "Callao",
 ];
 
-const ZONIFICACIONES = ["RDA", "RDM", "CZ", "CM", "I1"];
+const ZONIFICACIONES = ZONIFICACIONES_PRIORITARIAS_FILTRO;
 
 const ESTADOS = ["Disponible", "En Negociacion", "Separado", "Vendido"];
 
@@ -61,6 +65,8 @@ export function TerrenosFilters({
   isOpen,
   onClose,
 }: TerrenosFiltersProps) {
+  const [verTodasZonif, setVerTodasZonif] = React.useState(false);
+
   if (!isOpen) return null;
 
   const toggleDistrito = (d: string) => {
@@ -162,27 +168,52 @@ export function TerrenosFilters({
 
         {/* 2. Zonificación */}
         <div className="space-y-1.5">
-          <label className="text-2xs font-bold uppercase tracking-wider text-slate-600 font-mono flex items-center gap-1">
-            <Layers className="w-3 h-3 text-slate-400" />
-            <span>Zonificación Urbanística</span>
-          </label>
-          <div className="flex flex-wrap gap-1">
-            {ZONIFICACIONES.map((z) => {
-              const selected = filtros.zonificacion?.includes(z);
+          <div className="flex items-center justify-between">
+            <label className="text-2xs font-bold uppercase tracking-wider text-slate-600 font-mono flex items-center gap-1">
+              <Layers className="w-3 h-3 text-slate-400" />
+              <span>Zonificación Urbanística</span>
+            </label>
+            {filtros.zonificacion && filtros.zonificacion.length > 0 && (
+              <span className="text-3xs font-mono font-bold text-purple-700">
+                {filtros.zonificacion.length} selecc.
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto pr-0.5">
+            {(verTodasZonif
+              ? ZONIFICACIONES_LIMA
+              : ZONIFICACIONES_LIMA.filter((z) =>
+                  ZONIFICACIONES_PRIORITARIAS_FILTRO.includes(z.value)
+                )
+            ).map((z) => {
+              const selected = filtros.zonificacion?.includes(z.value);
               return (
                 <button
-                  key={z}
-                  onClick={() => toggleZonificacion(z)}
-                  className={`px-2 py-0.5 rounded-xs text-2xs font-mono font-bold border transition-colors ${
+                  key={z.value}
+                  onClick={() => toggleZonificacion(z.value)}
+                  title={`${z.value} — ${z.nombre} (${z.categoria})`}
+                  className={`px-1.5 py-0.5 rounded-xs text-2xs font-mono font-bold border transition-colors ${
                     selected
-                      ? "bg-purple-700 text-white border-purple-700"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      ? "bg-purple-700 text-white border-purple-700 shadow-2xs"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
                   }`}
                 >
-                  {z}
+                  {z.value}
                 </button>
               );
             })}
+          </div>
+
+          <div className="flex justify-end pt-0.5">
+            <button
+              onClick={() => setVerTodasZonif(!verTodasZonif)}
+              className="text-3xs font-mono text-purple-700 hover:text-purple-900 font-bold underline"
+            >
+              {verTodasZonif
+                ? "Mostrar principales (10)"
+                : `+ Ver todas (${ZONIFICACIONES_LIMA.length})`}
+            </button>
           </div>
         </div>
 

@@ -1,14 +1,27 @@
 import { MatchingWeights } from "./matching";
 
 export type ZonificacionTipo =
-  | "RDA"
-  | "RDM"
   | "RDB"
+  | "RDM"
+  | "RDA"
+  | "RDMA"
+  | "VT"
+  | "CV"
   | "CZ"
   | "CM"
   | "CI"
+  | "CE"
   | "I1"
-  | "OU";
+  | "I2"
+  | "I3"
+  | "I4"
+  | "OU"
+  | "ZRE"
+  | "ZTE"
+  | "E"
+  | "H"
+  | "ZRP"
+  | "CH";
 
 export interface IncentivoSostenible {
   activo: boolean;

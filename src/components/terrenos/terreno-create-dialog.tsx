@@ -15,10 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ZONIFICACIONES_LIMA,
+  ZONIFICACIONES_POR_CATEGORIA,
+} from "@/lib/constants/zonificaciones";
 import {
   TerrenoCompleto,
   Propietario,
@@ -72,14 +79,7 @@ const DISTRITOS_LIMA = [
   "Callao",
 ];
 
-const ZONIFICACIONES = [
-  { value: "RDA", label: "RDA - Residencial Densidad Alta" },
-  { value: "RDM", label: "RDM - Residencial Densidad Media" },
-  { value: "CZ", label: "CZ - Comercio Zonal" },
-  { value: "CM", label: "CM - Comercio Metropolitano" },
-  { value: "I1", label: "I1 - Industria Elemental / Liviana" },
-  { value: "ZTE", label: "ZTE - Zona de Tratamiento Especial" },
-];
+const ZONIFICACIONES = ZONIFICACIONES_LIMA;
 
 const USOS_OPCIONES = [
   "Residencial Multifamiliar",
@@ -744,12 +744,29 @@ export function TerrenoCreateDialog({
                   <SelectTrigger className="h-8 text-xs font-bold bg-white border-slate-300">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-slate-200">
-                    {ZONIFICACIONES.map((z) => (
-                      <SelectItem key={z.value} value={z.value} className="text-xs font-mono">
-                        {z.label}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="bg-white border-slate-200 max-h-72">
+                    {Object.entries(ZONIFICACIONES_POR_CATEGORIA).map(
+                      ([cat, items], idx) => (
+                        <SelectGroup key={cat}>
+                          {idx > 0 && <SelectSeparator className="bg-slate-200 my-1" />}
+                          <SelectLabel className="text-3xs font-mono font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2 py-1">
+                            {cat}
+                          </SelectLabel>
+                          {items.map((z) => (
+                            <SelectItem
+                              key={z.value}
+                              value={z.value}
+                              className="text-xs font-mono py-1 cursor-pointer"
+                            >
+                              <span className="font-bold text-slate-900">{z.value}</span>
+                              <span className="text-slate-500 ml-1.5 font-sans text-3xs">
+                                — {z.nombre}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>

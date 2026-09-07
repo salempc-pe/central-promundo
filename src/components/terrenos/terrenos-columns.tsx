@@ -17,6 +17,10 @@ import {
   Copy,
 } from "lucide-react";
 import { TerrenoCompleto } from "@/types";
+import {
+  getZonificacionBadgeClass,
+  getZonificacionLabel,
+} from "@/lib/constants/zonificaciones";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -169,20 +173,13 @@ export function getTerrenosColumns({ onSelectTerreno }: ColumnOptions): ColumnDe
       ),
       cell: ({ row }) => {
         const z = (row.getValue("zonificacion") as string) || "";
-        const badgeColor =
-          z === "RDA"
-            ? "bg-purple-50 text-purple-700 border-purple-200"
-            : z === "CZ"
-            ? "bg-blue-50 text-blue-700 border-blue-200"
-            : z === "CM"
-            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-            : z === "RDM"
-            ? "bg-amber-50 text-amber-700 border-amber-200"
-            : "bg-slate-100 text-slate-700 border-slate-300";
+        const badgeColor = getZonificacionBadgeClass(z);
+        const label = getZonificacionLabel(z);
 
         return (
           <div className="text-center">
             <span
+              title={label}
               className={`inline-block px-1.5 py-0.5 rounded text-2xs font-mono font-bold border ${badgeColor}`}
             >
               {z}

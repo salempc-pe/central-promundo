@@ -196,10 +196,12 @@ export function evaluarMatch(
       mensaje: `Zonificación ${zonif} coincide con la cartera buscada`,
     });
   } else if (
-    (zonifInteres.includes("RDM") && (zonif === "RDA" || zonif === "CZ")) ||
-    (zonifInteres.includes("RDA") && zonif === "CZ")
+    (zonifInteres.includes("RDM") && (zonif === "RDA" || zonif === "RDMA" || zonif === "CZ")) ||
+    (zonifInteres.includes("RDA") && (zonif === "RDMA" || zonif === "CZ" || zonif === "CM")) ||
+    (zonifInteres.includes("CZ") && zonif === "CM") ||
+    (zonifInteres.includes("I1") && zonif === "I2")
   ) {
-    // Mayor densidad absorbente
+    // Mayor densidad o compatibilidad absorbente
     zonifRatio = 0.85;
     zonifCumplida = true;
     razones.push(`Zonificación ${zonif} de mayor absorción residencial`);
