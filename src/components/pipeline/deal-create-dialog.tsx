@@ -26,7 +26,7 @@ import {
   Cliente,
 } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Building, User, DollarSign, FileText, AlertTriangle } from "lucide-react";
+import { Plus, Building, User, DollarSign, FileText, AlertTriangle, Loader2 } from "lucide-react";
 
 interface DealCreateDialogProps {
   isOpen: boolean;
@@ -84,6 +84,8 @@ export function DealCreateDialog({
   React.useEffect(() => {
     if (!isOpen) {
       hasInitializedRef.current = false;
+      setError(null);
+      setSubmitting(false);
       return;
     }
 
@@ -96,7 +98,15 @@ export function DealCreateDialog({
       }
       hasInitializedRef.current = true;
     }
-  }, [isOpen, currentUserId, brokers]);
+
+    if (!terrenoId && terrenosDisponibles.length > 0) {
+      setTerrenoId(terrenosDisponibles[0].id);
+      setMontoOferta(terrenosDisponibles[0].precioTotal);
+    }
+    if (!clienteId && clientesDisponibles.length > 0) {
+      setClienteId(clientesDisponibles[0].id);
+    }
+  }, [isOpen, currentUserId, brokers, terrenosDisponibles, clientesDisponibles, terrenoId, clienteId]);
 
   const handleTerrenoChange = (id: string) => {
     setTerrenoId(id);
@@ -121,6 +131,10 @@ export function DealCreateDialog({
       setError("Selecciona una constructora o cliente.");
       return;
     }
+    if (!brokerId && (!brokers || brokers.length === 0)) {
+      setError("No hay brokers registrados con cuenta Google/Gmail aprobada.");
+      return;
+    }
     const montoNum = parseFloat(montoOferta);
     if (isNaN(montoNum) || montoNum <= 0) {
       setError("Ingresa un monto de oferta válido mayor a 0.");
@@ -134,10 +148,15 @@ export function DealCreateDialog({
     setError(null);
     setSubmitting(true);
     try {
+      const finalBrokerId = brokerId || (currentUserId && brokers.some((b) => b.id === currentUserId) ? currentUserId : brokers[0]?.id);
+      if (!finalBrokerId) {
+        throw new Error("Selecciona un broker responsable registrado con su Gmail.");
+      }
+
       await onSubmit({
         terrenoId,
         clienteId,
-        brokerId: brokerId || brokers[0]?.id || "",
+        brokerId: finalBrokerId,
         etapaInicial,
         montoOferta: montoNum,
         probabilidadCierre: Number(probabilidad),
@@ -145,6 +164,7 @@ export function DealCreateDialog({
       });
       onClose();
     } catch (err: any) {
+      console.error("DealCreateDialog submit error:", err);
       setError(err.message || "Error al crear la negociación.");
     } finally {
       setSubmitting(false);
@@ -227,9 +247,12 @@ export function DealCreateDialog({
                   {brokers.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
                       <div className="flex items-center justify-between gap-3 w-full pr-2">
-                        <span className="font-semibold text-slate-900">{b.nombre}</span>
+                        <div className="flex flex-col text-left">
+                          <span className="font-semibold text-slate-900 leading-tight">{b.nombre}</span>
+                          <span className="text-3xs text-slate-500 font-sans">{b.email}</span>
+                        </div>
                         <span
-                          className={`text-3xs px-1.5 py-0.5 rounded font-sans uppercase tracking-wider border ${
+                          className={`text-3xs px-1.5 py-0.5 rounded font-sans uppercase tracking-wider border shrink-0 ${
                             b.rol === "admin"
                               ? "bg-blue-50 text-blue-700 border-blue-200"
                               : b.rol === "broker_senior"
@@ -333,9 +356,13 @@ export function DealCreateDialog({
               type="submit"
               size="sm"
               disabled={submitting}
-              className="h-8 text-xs font-mono bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1"
+              className="h-8 text-xs font-mono bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1 min-w-[140px]"
             >
-              <Plus className="w-3.5 h-3.5" />
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+              ) : (
+                <Plus className="w-3.5 h-3.5 shrink-0" />
+              )}
               <span>{submitting ? "Creando..." : "Crear Negociación"}</span>
             </Button>
           </DialogFooter>

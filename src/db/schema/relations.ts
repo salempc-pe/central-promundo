@@ -53,10 +53,7 @@ export const negociacionesRelations = relations(negociaciones, ({ one, many }) =
     references: [usuarios.id],
   }),
   bitacoras: many(bitacoraNegociacion),
-  comision: one(comisionesCierres, {
-    fields: [negociaciones.id],
-    references: [comisionesCierres.negociacionId],
-  }),
+  comision: one(comisionesCierres),
 }));
 
 export const bitacoraNegociacionRelations = relations(bitacoraNegociacion, ({ one }) => ({

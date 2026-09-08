@@ -42,50 +42,14 @@ async function main() {
   const existingUsers = await sql`SELECT id, email, nombre, rol, estado_acceso FROM usuarios;`;
   console.log(`✓ Usuarios existentes: ${existingUsers.length}`);
 
-  // Asegurar que Paulo Salem y brokers institucionales existan aprobados
-  const brokersToAdd = [
-    {
-      nombre: 'Alvaro Barrenechea',
-      email: 'abarrenechea@promundo.pe',
-      rol: 'broker_senior',
-      estadoAcceso: 'aprobado',
-      notas: 'Broker Senior - Especialista en Lima Moderna',
-    },
-    {
-      nombre: 'Sofia Mendoza',
-      email: 'smendoza@promundo.pe',
-      rol: 'broker_senior',
-      estadoAcceso: 'aprobado',
-      notas: 'Broker Senior - Especialista en Lima Top & Multifamiliar',
-    },
-    {
-      nombre: 'Carlos Mendoza',
-      email: 'cmendoza@promundo.pe',
-      rol: 'broker_senior',
-      estadoAcceso: 'aprobado',
-      notas: 'Broker Senior - Gestión Corporativa y Fondos',
-    }
-  ];
-
-  for (const b of brokersToAdd) {
-    const exists = existingUsers.some(u => u.email.toLowerCase() === b.email.toLowerCase());
-    if (!exists) {
-      await sql`
-        INSERT INTO usuarios (id, nombre, email, rol, estado_acceso, notas, activo, created_at, updated_at)
-        VALUES (
-          gen_random_uuid(), ${b.nombre}, ${b.email}, ${b.rol}, ${b.estadoAcceso}, ${b.notas}, true, NOW(), NOW()
-        );
-      `;
-      console.log(`+ Creado broker institucional: ${b.nombre} (${b.email})`);
-    }
-  }
-
-  const allBrokers = await sql`SELECT id, email, nombre, rol FROM usuarios WHERE estado_acceso = 'aprobado' AND activo = true;`;
-  console.log(`✓ Total brokers aprobados listos: ${allBrokers.length}`);
+  // Obtener únicamente brokers reales registrados con cuenta Google OAuth
+  const allBrokers = await sql`SELECT id, email, nombre, rol FROM usuarios WHERE estado_acceso = 'aprobado' AND activo = true AND auth_id IS NOT NULL;`;
+  console.log(`✓ Total brokers reales aprobados listos: ${allBrokers.length}`);
   const pauloSalem = allBrokers.find(u => u.email === 'paulosalem8@gmail.com') || allBrokers[0];
-  const broker1 = allBrokers.find(u => u.email === 'abarrenechea@promundo.pe') || pauloSalem;
-  const broker2 = allBrokers.find(u => u.email === 'smendoza@promundo.pe') || allBrokers[1] || pauloSalem;
-  const broker3 = allBrokers.find(u => u.email === 'cmendoza@promundo.pe') || allBrokers[2] || pauloSalem;
+  const oteloBroker = allBrokers.find(u => u.email === 'otelo.pet@gmail.com') || pauloSalem;
+  const broker1 = oteloBroker;
+  const broker2 = pauloSalem;
+  const broker3 = oteloBroker;
 
   // 2. Obtener terrenos y clientes de la BD
   console.log("\n2. Obteniendo terrenos y clientes reales de PostgreSQL...");

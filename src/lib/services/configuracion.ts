@@ -32,7 +32,7 @@ let memoryConfigMatching: ConfiguracionMatchingGlobal = {
   penalidadDistritoNoColindante: -20,
   autoTriggerEnCambioLote: true,
   updatedAt: new Date().toISOString(),
-  updatedBy: "Alvaro Barrenechea",
+  updatedBy: "Paulo Salem",
 };
 
 // Capas cartográficas WMS/Vectoriales institucionales
@@ -167,7 +167,7 @@ export async function getParametrosUrbanisticos(filtro?: {
 export async function updateParametroUrbanistico(
   id: string,
   input: Partial<ParametroUrbanisticoDistrital>,
-  usuarioNombre: string = "Alvaro Barrenechea"
+  usuarioNombre: string = "Paulo Salem"
 ): Promise<ParametroUrbanisticoDistrital> {
   const index = memoryParametros.findIndex((p) => p.id === id);
   if (index === -1) {
@@ -210,7 +210,7 @@ export async function getConfiguracionMatching(): Promise<ConfiguracionMatchingG
 
 export async function updateConfiguracionMatching(
   input: ConfiguracionMatchingGlobal,
-  usuarioNombre: string = "Alvaro Barrenechea"
+  usuarioNombre: string = "Paulo Salem"
 ): Promise<ConfiguracionMatchingGlobal> {
   const { ticket, zona, zonificacion, altura, frenteArea } = input.weights;
   const suma = ticket + zona + zonificacion + altura + frenteArea;
@@ -247,7 +247,7 @@ export async function updateConfiguracionMatching(
 }
 
 export async function resetConfiguracionMatching(
-  usuarioNombre: string = "Alvaro Barrenechea"
+  usuarioNombre: string = "Paulo Salem"
 ): Promise<ConfiguracionMatchingGlobal> {
   const defaultConfig: ConfiguracionMatchingGlobal = {
     weights: {
@@ -283,7 +283,7 @@ export async function getGisInfraestructuraStatus(): Promise<GisInfraestructuraS
 }
 
 export async function ejecutarDiagnosticoGis(
-  usuarioNombre: string = "Alvaro Barrenechea"
+  usuarioNombre: string = "Paulo Salem"
 ): Promise<GisInfraestructuraStatus> {
   // Simulación dinámica de latencia real entre 9ms y 14ms
   const nuevaLatencia = Math.floor(Math.random() * 5) + 9;
@@ -322,7 +322,7 @@ export async function getCapasCartograficas(): Promise<CapaCartograficaInfo[]> {
 export async function toggleCapaCartografica(
   id: string,
   activa: boolean,
-  usuarioNombre: string = "Alvaro Barrenechea"
+  usuarioNombre: string = "Paulo Salem"
 ): Promise<CapaCartograficaInfo> {
   const index = memoryCapasCartograficas.findIndex((c) => c.id === id);
   if (index === -1) {

@@ -30,7 +30,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Aplica en predios con frente a avenidas mayores a 20m de ancho. Retiro municipal frontal de 5.00m.",
     updatedAt: "2026-06-10T14:30:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
   // 2. MIRAFLORES - RDM (Residencial de Densidad Media)
   {
@@ -50,7 +50,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Frente a calles secundarias. Prohibida la edificación comercial en primer nivel salvo consultorio médico anexo.",
     updatedAt: "2026-05-12T11:00:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
   // 3. MIRAFLORES - CZ (Comercio Zonal - Ovalo Gutiérrez / Larco)
   {
@@ -91,7 +91,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Área libre obligatoria al 40%. Restricción estricta de altura frente al Lima Golf Club.",
     updatedAt: "2026-06-15T09:15:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
   // 5. SAN ISIDRO - CM / CZ (Centro Financiero - Canaval y Moreyra / Begonias)
   {
@@ -117,7 +117,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "En predios con área > 2,000 m² se autoriza altura libre hasta 30 pisos con estudio de impacto vial aprobado.",
     updatedAt: "2026-07-18T10:45:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
   // 6. SAN ISIDRO - RDM (Sectores 3 y 4 - Cavenecia / Dasso)
   {
@@ -137,7 +137,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Máximo 1 departamento por piso en lotes de frente inferior a 15m. Prohibido subdivisión.",
     updatedAt: "2026-04-20T17:00:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
 
   // 7. SANTIAGO DE SURCO - RDA (Chacarilla / El Polo)
@@ -199,7 +199,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Restricción explícita de vivienda VIS. Altura condicionada a frentes de avenida no menor a 25m.",
     updatedAt: "2026-06-25T11:20:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
   // 10. SAN BORJA - RDM (Interior residencial canónico)
   {
@@ -219,7 +219,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Protección estricta de perfil residencial. No se permite azotea habitable comercial.",
     updatedAt: "2026-05-18T14:40:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
 
   // 11. JESÚS MARÍA - RDA (Av. Brasil / Av. Salaverry)
@@ -246,7 +246,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Alta rotación para proyectos de 1 y 2 dormitorios. Frente a Av. Brasil permite hasta 20 pisos con retiro.",
     updatedAt: "2026-07-10T09:00:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
   // 12. JESÚS MARÍA - CZ (Av. San Felipe / Garzón)
   {
@@ -266,7 +266,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Apto para strip centers, laboratorios médicos, oficinas híbridas y vivienda multifamiliar.",
     updatedAt: "2026-06-12T13:30:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
 
   // 13. LINCE - RDA (Av. Arenales / Av. Arequipa)
@@ -293,7 +293,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Eje de alta demanda para inversionistas de renta corta y coliving juvenil.",
     updatedAt: "2026-07-08T15:00:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
 
   // 14. BARRANCO - RDA (Av. Grau / Av. Pedro de Osma)
@@ -335,7 +335,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Frente al malecón Castagnola y Av. Brasil se aplican retiros escalonados a partir del piso 10.",
     updatedAt: "2026-06-01T16:00:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
 
   // 16. SAN MIGUEL - RDA (Av. Costanera / La Marina)
@@ -377,7 +377,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Eje estratégico logístico-aeroportuario adyacente a la ampliación del Aeropuerto Internacional Jorge Chávez.",
     updatedAt: "2026-07-20T17:30:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
 
   // 18. CALLAO - RDA (Costanera Callao / Bellavista)
@@ -419,7 +419,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Destinado a industria ligera inofensiva, bodegas de última milla, datacenters y ensamblaje.",
     updatedAt: "2026-07-15T14:10:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
 
   // 20. ATE - CZ (Prolongación Javier Prado / Ceres)
@@ -440,7 +440,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Eje de alta conectividad con Línea 2 del Metro de Lima.",
     updatedAt: "2026-06-30T11:00:00Z",
-    updatedBy: "Sofia Mendoza",
+    updatedBy: "Paulo Salem",
   },
 
   // 21. LA MOLINA - RDB (Residencial de Densidad Baja - Rinconada / La Planicie)
@@ -461,7 +461,7 @@ export const parametrosUrbanisticosNormativos: ParametroUrbanisticoDistrital[] =
     notasNormativas:
       "Vivienda unifamiliar exclusiva. Altísima área libre al 50%. Prohibido edificio de departamentos.",
     updatedAt: "2026-05-10T15:20:00Z",
-    updatedBy: "Alvaro Barrenechea",
+    updatedBy: "Paulo Salem",
   },
 
   // 22. LA MOLINA - CZ (Av. Javier Prado Este / Raúl Ferrero)

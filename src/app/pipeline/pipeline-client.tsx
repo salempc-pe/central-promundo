@@ -243,9 +243,11 @@ export function PipelineClient({
       notaInicial: data.notaInicial,
     });
 
-    if (res.success) {
-      await loadData();
+    if (!res.success) {
+      throw new Error(res.error || "No se pudo registrar la negociación en la base de datos.");
     }
+
+    await loadData();
   };
 
   const handleExportExcel = () => {

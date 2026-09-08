@@ -10,7 +10,7 @@ import {
   terrenos,
   comisionesCierres,
 } from "@/db/schema";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, asc, desc, isNotNull } from "drizzle-orm";
 import {
   Usuario,
   Cliente,
@@ -26,7 +26,7 @@ import { getUsuariosSolicitudes } from "@/lib/services/auth-service";
 
 /**
  * Obtiene la lista de usuarios reales habilitados como brokers responsables
- * (aquellos con estadoAcceso = 'aprobado' y activo = true)
+ * (aquellos con estadoAcceso = 'aprobado', activo = true y registrados con su cuenta de Google/Gmail: authId no nulo)
  */
 export async function getBrokersAction(): Promise<Usuario[]> {
   try {
@@ -37,7 +37,8 @@ export async function getBrokersAction(): Promise<Usuario[]> {
       .where(
         and(
           eq(usuarios.estadoAcceso, "aprobado"),
-          eq(usuarios.activo, true)
+          eq(usuarios.activo, true),
+          isNotNull(usuarios.authId)
         )
       )
       .orderBy(asc(usuarios.nombre));
@@ -64,10 +65,10 @@ export async function getBrokersAction(): Promise<Usuario[]> {
     console.warn("getBrokersAction: Error al consultar usuarios en PostgreSQL:", error);
   }
 
-  // Fallback seguro usando auth-service
+  // Fallback seguro usando auth-service (solo usuarios con cuenta Google OAuth registrada)
   const solicitudes = await getUsuariosSolicitudes();
   const aprobados = solicitudes.filter(
-    (u) => u.estadoAcceso === "aprobado" && u.activo === true
+    (u) => u.estadoAcceso === "aprobado" && u.activo === true && Boolean(u.authId)
   );
 
   return aprobados.map((u) => ({
