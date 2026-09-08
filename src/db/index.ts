@@ -4,8 +4,8 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 const connectionString =
-  process.env.DIRECT_URL ||
   process.env.DATABASE_URL ||
+  process.env.DIRECT_URL ||
   "postgresql://postgres:postgres@localhost:54322/postgres";
 
 const isSupabase =

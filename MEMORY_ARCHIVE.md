@@ -2,6 +2,11 @@
 
 Este archivo almacena el historial acumulativo e inmutable de **todas las acciones técnicas, operativas y arquitectónicas** tomadas en el proyecto "Promundo Sistema", categorizadas cronológicamente por fecha.
 
+## 📅 2026-09-08 (Estabilización de Conexión Supabase Pooler IPv4 y Resolución de Error DNS ENOTFOUND en Alta de Terrenos)
+
+### 🗄️ Infraestructura Cloud, Base de Datos & Alta de Terrenos
+* **[ACC-084] [2026-09-08 02:30] Corrección de Prioridad de Conexión a Supabase Transaction Pooler (Puerto 6543) y Configuración Dual-Stack IPv4 en .env.local:** Diagnóstico y resolución mediante subagentes especializados (`clean-code`, `database-design`, `postgresql`, `nextjs-best-practices`). 1) **Causa Raíz:** Al agregar un nuevo terreno desde el modal de alta (`TerrenoCreateDialog`), la Server Action `createTerrenoAction` arrojaba `getaddrinfo ENOTFOUND db.rioosacxbuwkxntxmmpe.supabase.co`. Esto se debía a que en `src/db/index.ts` la cadena de conexión evaluaba `process.env.DIRECT_URL || process.env.DATABASE_URL`, priorizando la conexión directa `db.rioosacxbuwkxntxmmpe.supabase.co:5432`. Dado que Supabase asigna exclusivamente registros IPv6 (AAAA) para conexiones directas en tier gratuito, en entornos Windows/Node.js donde la red local no resuelve IPv6, la resolución DNS fallaba de inmediato. 2) **Resolución Arquitectónica:** En `src/db/index.ts`, se invirtió la prioridad para utilizar en primer lugar `process.env.DATABASE_URL` (Supabase Transaction Pooler en puerto 6543, compatible con `prepare: false` y con soporte dual-stack IPv4/IPv6 en `aws-0-sa-east-1.pooler.supabase.com`). En `.env.local`, se actualizó `DIRECT_URL` al Session Pooler de Supabase en puerto 5432 para garantizar soporte IPv4 total en cualquier script o migración de respaldo. 3) **Verificación:** Ejecución exitosa de `scripts/test-db-persistence.mjs` (inserción de terreno con PostGIS WGS84, consulta, actualización y eliminación limpia 100% PASS), ejecución de `scripts/check-db.mjs` (6 usuarios, 20 terrenos, 4 clientes recuperados), verificación de compilación y servidor de desarrollo activo en `http://localhost:3000` con respuesta HTTP 200 OK.
+
 ## 📅 2026-09-07 (Migración Integral a PostgreSQL, Erradicación de Mocks y Eliminación Fiduciaria de Terrenos)
 
 ### 🗄️ Infraestructura, Base de Datos & Erradicación de Mocks

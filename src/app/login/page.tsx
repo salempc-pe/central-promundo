@@ -10,15 +10,19 @@ export const metadata: Metadata = {
 interface LoginPageProps {
   searchParams?: {
     error?: string;
+    msg?: string;
     redirectTo?: string;
   };
 }
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
   const errorParam = searchParams?.error;
+  const customMsg = searchParams?.msg;
   let errorMsg: string | null = null;
 
-  if (errorParam === "auth_error" || errorParam === "oauth_exchange_failed") {
+  if (customMsg) {
+    errorMsg = customMsg;
+  } else if (errorParam === "auth_error" || errorParam === "oauth_exchange_failed") {
     errorMsg = "No se pudo completar la autenticación con Google. Intenta nuevamente.";
   } else if (errorParam === "auth_code_missing") {
     errorMsg = "El código de autorización no fue proporcionado.";
